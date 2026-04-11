@@ -9,13 +9,13 @@
     <style>
         /* --- 기본 UI 테마 변수 (화이트 테마) --- */
         :root {
-            --bg-page: #f4f6f9;       /* 페이지 배경 */
-            --bg-panel: #ffffff;      /* 에디터 배경 */
-            --border-light: #e2e8f0;  /* 옅은 테두리 */
-            --border-focus: #3b82f6;  /* 포커스 테두리 */
-            --text-main: #0f172a;     /* 메인 텍스트 */
-            --text-sub: #64748b;      /* 보조 텍스트 */
-            --input-bg: #f8fafc;      /* 입력칸 배경 */
+            --bg-page: #f4f6f9;       
+            --bg-panel: #ffffff;      
+            --border-light: #e2e8f0;  
+            --border-focus: #3b82f6;  
+            --text-main: #0f172a;     
+            --text-sub: #64748b;      
+            --input-bg: #f8fafc;      
         }
 
         /* --- 프리뷰 제어 변수 (JS로 제어됨) --- */
@@ -283,6 +283,9 @@
             left: 0;
             z-index: 1;
             display: none; 
+            /* 🔥 이미지 눌림 100% 방지 (하드웨어 가속 & 렌더링 최적화) */
+            image-rendering: auto;
+            transform: translateZ(0);
         }
 
         .text-overlay-bottom {
@@ -294,6 +297,7 @@
             background: linear-gradient(to bottom, transparent, #000000); 
             z-index: 2;
             pointer-events: none;
+            transition: background 0.1s; /* 캡처 시 순간 변경을 부드럽게 */
         }
 
         .text-content-container {
@@ -519,9 +523,10 @@
         syncText('nameInput', 'previewName');
         syncText('phraseInput', 'previewPhrase');
 
-        // --- 완벽한 html2canvas 캡처 최적화 로직 ---
+        // 🔥 [최종 수정] 완벽한 버그 픽스가 적용된 캡처 로직
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const captureArea = document.getElementById('captureArea');
+            const overlay = document.querySelector('.text-overlay-bottom');
             const btn = document.getElementById('downloadBtn');
             const nameValue = document.getElementById('nameInput').value || '캐치프레이즈';
             
@@ -529,37 +534,30 @@
             btn.style.opacity = "0.7";
             btn.style.pointerEvents = "none";
 
-            // 브라우저 렌더링 기준 정확한 크기 획득
-            const rect = captureArea.getBoundingClientRect();
-
-            // 현재 스타일 백업
-            const originalStyle = {
-                position: captureArea.style.position,
-                top: captureArea.style.top,
-                left: captureArea.style.left,
-                zIndex: captureArea.style.zIndex,
-                boxShadow: captureArea.style.boxShadow,
-                transform: captureArea.style.transform
+            // 1단계: 캡처 전 기존 스타일 저장 (레이어 분리 및 오버레이 버그 방지)
+            const originalStyles = {
+                border: captureArea.style.borderBottom,
+                shadow: captureArea.style.boxShadow,
+                overlayBg: overlay.style.background
             };
 
-            // 캡처용 임시 스타일 적용 (absolute + 화면 밖 이동 + 방해 요소 제거)
-            captureArea.style.position = 'absolute';
-            captureArea.style.top = '-9999px';
-            captureArea.style.left = '0';
-            captureArea.style.zIndex = '-1';
+            // 버그 제거용 임시 스타일 세팅
+            captureArea.style.borderBottom = 'none';
             captureArea.style.boxShadow = 'none';
-            captureArea.style.transform = 'none';
+            overlay.style.background = 'rgba(0,0,0,0.6)'; // 그라데이션 대신 단색으로 임시 변경
 
             setTimeout(() => {
+                // 2단계: html2canvas 옵션 (명시적 width/height 제거, scale 2 고정)
                 html2canvas(captureArea, {
-                    scale: window.devicePixelRatio || 2,
-                    width: rect.width,
-                    height: rect.height,
+                    scale: 2, 
                     useCORS: true,
-                    backgroundColor: null
+                    backgroundColor: null,
+                    logging: false
                 }).then(canvas => {
-                    // 원상 복구
-                    Object.assign(captureArea.style, originalStyle);
+                    // 3단계: 캡처 후 스타일 즉시 복구
+                    captureArea.style.borderBottom = originalStyles.border;
+                    captureArea.style.boxShadow = originalStyles.shadow;
+                    overlay.style.background = originalStyles.overlayBg;
 
                     const link = document.createElement('a');
                     link.download = nameValue + '_포스터.png';
@@ -570,7 +568,11 @@
                     btn.style.opacity = "1";
                     btn.style.pointerEvents = "auto";
                 }).catch(err => {
-                    Object.assign(captureArea.style, originalStyle);
+                    // 에러 발생 시에도 복구
+                    captureArea.style.borderBottom = originalStyles.border;
+                    captureArea.style.boxShadow = originalStyles.shadow;
+                    overlay.style.background = originalStyles.overlayBg;
+                    
                     console.error("캡처 오류:", err);
                     alert("이미지 저장 중 오류가 발생했습니다. 브라우저 콘솔을 확인해주세요.");
                     btn.innerText = "고화질 이미지 저장";

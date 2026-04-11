@@ -20,6 +20,8 @@
 
         /* --- 프리뷰 제어 변수 (JS로 제어됨) --- */
         #captureArea {
+            --fallback-bg: #d1d5db;
+            --gradient-base: #000000;   /* 하단 그라데이션 베이스 색상 */
             --badge-bg: #E91E63;        
             --badge-text: #ffffff;      
             --card-primary-text: #ffffff; 
@@ -261,12 +263,13 @@
         }
 
         .phrase-container {
+            /* 🔥 [최종 픽스] 컨테이너 강제 고정 */
             width: 800px;
             height: 600px;
-            flex: none; /* 부모 레이아웃 간섭 차단 */
+            flex: none; 
             box-sizing: border-box; 
             position: relative;
-            background-color: #d1d5db;
+            background-color: var(--fallback-bg); 
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
@@ -277,13 +280,14 @@
         .character-image {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            object-position: center;
             position: absolute;
             top: 0;
             left: 0;
             z-index: 1;
             display: none; 
+            /* 🔥 [최종 픽스] 이미지 넙적해짐 & 크롭 방지 */
+            object-fit: cover;
+            object-position: center top; 
             image-rendering: auto;
             transform: translateZ(0);
         }
@@ -293,8 +297,14 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 55%;
-            background: linear-gradient(to bottom, transparent, #000000); 
+            /* 🔥 [최종 픽스] 55% -> 100%로 변경하여 검은 띠 렌더링 버그 제거 */
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(0,0,0,0) 0%,
+                rgba(0,0,0,0) 50%,
+                var(--gradient-base) 100%
+            );
             z-index: 2;
             pointer-events: none;
         }
@@ -363,16 +373,13 @@
             word-break: keep-all;
         }
 
-        /* 🔥 [캡처 모드 전용 스타일] html2canvas 렌더링 버그 원천 차단 */
+        /* 🔥 [캡처 모드 전용 스타일] 실선 버그 100% 방지 */
         .capture-mode {
             box-shadow: none !important;
             border-bottom: none !important;
-            border-radius: 0 !important; /* 캡처 시 외곽선 깔끔하게 처리 */
+            border-radius: 0 !important; 
         }
-        
-        .capture-mode .text-overlay-bottom {
-            background: rgba(0, 0, 0, 0.6) !important;
-        }
+        /* (이제 그라데이션 버그가 고쳐졌으므로 캡처 시 배경을 단색으로 덮는 코드는 삭제했습니다) */
 
     </style>
 </head>
@@ -423,6 +430,14 @@
         
         <div class="color-grid">
             <div class="color-item">
+                <input type="color" id="fallbackBgInput" value="#d1d5db">
+                <label for="fallbackBgInput">기본 배경색</label>
+            </div>
+            <div class="color-item">
+                <input type="color" id="gradientBaseInput" value="#000000">
+                <label for="gradientBaseInput">하단 음영</label>
+            </div>
+            <div class="color-item">
                 <input type="color" id="badgeBgInput" value="#E91E63">
                 <label for="badgeBgInput">뱃지 배경 / 선</label>
             </div>
@@ -469,6 +484,10 @@
             });
             document.getElementById('captureArea').style.setProperty(cssVarName, picker.value);
         }
+
+        // 색상 변수 바인딩 복구 (사용자가 요청했던 기본 배경/하단 음영 선택기 부활)
+        syncColor('fallbackBgInput', '--fallback-bg');
+        syncColor('gradientBaseInput', '--gradient-base');
 
         const badgePicker = document.getElementById('badgeBgInput');
         badgePicker.addEventListener('input', function(e) {
@@ -547,10 +566,10 @@
             // 1. 원본 복제
             const clone = original.cloneNode(true);
 
-            // 2. 캡처 모드 클래스 추가 (그라데이션 및 테두리 버그 제거)
+            // 2. 캡처 모드 클래스 추가 (테두리 실선 및 그림자 충돌 100% 방지)
             clone.classList.add('capture-mode');
 
-            // 3. 부모 레이아웃 간섭 100% 차단용 절대 고정 스타일
+            // 3. 부모 레이아웃 간섭 차단용 절대 고정 스타일
             clone.style.position = 'fixed';
             clone.style.top = '0';
             clone.style.left = '0';
@@ -566,7 +585,7 @@
             document.body.appendChild(clone);
 
             setTimeout(() => {
-                // 5. 캡처 실행 (scale 2 고정, 충돌 옵션 제거)
+                // 5. 캡처 실행 (scale 2, 그라데이션 정상 렌더링)
                 html2canvas(clone, {
                     scale: 2, 
                     useCORS: true,

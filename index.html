@@ -247,7 +247,7 @@
         }
 
         /* ---------------------------------
-           2. 오른쪽: 결과물 미리보기
+           2. 오른쪽: 결과물 미리보기 (웹용)
         --------------------------------- */
         .preview-panel {
             display: flex;
@@ -255,6 +255,7 @@
             align-items: center;
         }
 
+        /* 이제 이 부분은 "순수하게 미리보기용"으로만 쓰입니다. (다운로드는 Canvas로 진행) */
         .phrase-container {
             width: 800px;
             height: 600px;
@@ -408,24 +409,12 @@
         
         <div class="color-grid">
             <div class="color-item">
-                <input type="color" id="fallbackBgInput" value="#d1d5db">
-                <label for="fallbackBgInput">기본 배경색</label>
-            </div>
-            <div class="color-item">
                 <input type="color" id="badgeBgInput" value="#E91E63">
                 <label for="badgeBgInput">뱃지 배경 / 선</label>
             </div>
             <div class="color-item">
-                <input type="color" id="badgeTextInput" value="#ffffff">
-                <label for="badgeTextInput">뱃지 텍스트</label>
-            </div>
-            <div class="color-item">
                 <input type="color" id="threatLevelInput" value="#E91E63">
                 <label for="threatLevelInput">위협 등급</label>
-            </div>
-            <div class="color-item">
-                <input type="color" id="cardPrimaryTextInput" value="#ffffff">
-                <label for="cardPrimaryTextInput">메인 텍스트</label>
             </div>
         </div>
 
@@ -449,7 +438,7 @@
     </div>
 
     <script>
-        // --- 1. 색상 동기화 ---
+        // --- 1. 색상 동기화 (미리보기용) ---
         function syncColor(inputId, cssVarName) {
             const picker = document.getElementById(inputId);
             picker.addEventListener('input', function(e) {
@@ -457,8 +446,6 @@
             });
             document.getElementById('captureArea').style.setProperty(cssVarName, picker.value);
         }
-
-        syncColor('fallbackBgInput', '--fallback-bg');
 
         const badgePicker = document.getElementById('badgeBgInput');
         badgePicker.addEventListener('input', function(e) {
@@ -469,12 +456,10 @@
         document.getElementById('captureArea').style.setProperty('--badge-bg', badgePicker.value);
         document.getElementById('captureArea').style.setProperty('--border-color', badgePicker.value);
 
-        syncColor('badgeTextInput', '--badge-text');
-        syncColor('cardPrimaryTextInput', '--card-primary-text');
         syncColor('threatLevelInput', '--threat-level-text');
 
-        // --- 2. 텍스트 및 이미지 로드 ---
-        let uploadedImage = new Image(); 
+        // --- 2. 텍스트 및 이미지 동기화 (미리보기용) ---
+        let uploadedImage = new Image(); // Canvas 렌더링용 원본 이미지 저장 객체
 
         document.getElementById('imgInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -485,9 +470,11 @@
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const src = event.target.result;
+                    // 미리보기 DOM 업데이트
                     const imgEl = document.getElementById('previewImg');
                     imgEl.src = src;
                     imgEl.style.display = 'block'; 
+                    // Canvas용 이미지 객체 로드
                     uploadedImage.src = src;
                 }
                 reader.readAsDataURL(file);
@@ -536,7 +523,9 @@
             btn.style.opacity = "0.7";
             btn.style.pointerEvents = "none";
 
+            // 브라우저 렌더링 차단 방지를 위해 setTimeout 사용
             setTimeout(() => {
+                // 1. 고해상도 캔버스 생성 (800x600 고정)
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 canvas.width = 800;
@@ -550,11 +539,11 @@
                 ctx.roundRect(0, 0, canvas.width, canvas.height, 20); // CSS의 border-radius: 20px
                 ctx.clip(); // 이후에 그려지는 모든 것은 이 둥근 모서리 밖으로 나갈 수 없음!
 
-                // 데이터 수집
-                const fallbackBg = document.getElementById('fallbackBgInput').value;
+                // 데이터 가져오기 (삭제된 입력창은 고정값으로 대체)
+                const fallbackBg = '#d1d5db'; // 고정
                 const badgeBg = document.getElementById('badgeBgInput').value;
-                const badgeTextCol = document.getElementById('badgeTextInput').value;
-                const primaryTextCol = document.getElementById('cardPrimaryTextInput').value;
+                const badgeTextCol = '#ffffff'; // 고정
+                const primaryTextCol = '#ffffff'; // 고정
                 const threatCol = document.getElementById('threatLevelInput').value;
 
                 const classVal = document.getElementById('classInput').value.trim().toUpperCase();
@@ -574,11 +563,13 @@
                     let renderW, renderH, renderX, renderY;
 
                     if (imgRatio > canvasRatio) {
+                        // 이미지가 캔버스보다 가로로 김 (좌우 크롭)
                         renderH = canvas.height;
                         renderW = uploadedImage.width * (canvas.height / uploadedImage.height);
                         renderX = (canvas.width - renderW) / 2; 
                         renderY = 0; 
                     } else {
+                        // 이미지가 캔버스보다 세로로 김 (하단 크롭)
                         renderW = canvas.width;
                         renderH = uploadedImage.height * (canvas.width / uploadedImage.width);
                         renderX = 0; 
@@ -587,7 +578,7 @@
                     ctx.drawImage(uploadedImage, renderX, renderY, renderW, renderH);
                 }
 
-                // 4. 그라데이션 오버레이
+                // 4. 그라데이션 오버레이 (버그 없는 순수 Canvas 그라데이션)
                 const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
                 gradient.addColorStop(0, 'rgba(0,0,0,0)');
                 gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
@@ -595,15 +586,16 @@
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // --- 텍스트 렌더링 세팅 ---
+                // --- 텍스트 렌더링 설정 ---
                 ctx.shadowColor = 'rgba(0,0,0,0.6)';
                 ctx.shadowBlur = 6;
                 ctx.shadowOffsetX = 1;
                 ctx.shadowOffsetY = 1;
 
-                let currentY = canvas.height - 40; 
+                // 4. 하단부터 위로 텍스트 그리기 (Bottom-up Layout)
+                let currentY = canvas.height - 40; // bottom: 40px
 
-                // 5-1. 캐치프레이즈 (Bottom-up)
+                // 4-1. 캐치프레이즈
                 if (phraseVal) {
                     ctx.fillStyle = primaryTextCol;
                     ctx.font = '300 17px Pretendard, sans-serif';
@@ -620,7 +612,7 @@
                     currentY -= 10; 
                 }
 
-                // 5-2. 이름
+                // 4-2. 이름 (NAME)
                 if (nameVal) {
                     ctx.fillStyle = primaryTextCol;
                     ctx.font = '900 88px Pretendard, sans-serif';
@@ -632,7 +624,7 @@
                     currentY -= 6;  
                 }
 
-                // 5-3. 위협 등급
+                // 4-3. 위협 등급 (THREAT LEVEL)
                 if (threatVal) {
                     ctx.fillStyle = threatCol;
                     ctx.font = '900 17px Pretendard, sans-serif';
@@ -642,7 +634,7 @@
                     ctx.letterSpacing = "0px";
                 }
 
-                // 6. 우측 상단 CLASS 뱃지
+                // 5. 우측 상단 CLASS 뱃지 그리기
                 if (badgeStr) {
                     ctx.font = '800 14px Pretendard, sans-serif';
                     ctx.letterSpacing = "1px";
@@ -651,19 +643,22 @@
                     const paddingY = 10;
                     const badgeW = textWidth + (paddingX * 2);
                     const badgeH = 14 + (paddingY * 2);
-                    const badgeX = canvas.width - 40 - badgeW; 
-                    const badgeY = 40; 
+                    const badgeX = canvas.width - 40 - badgeW; // right: 40px
+                    const badgeY = 40; // top: 40px
 
+                    // 뱃지 배경 (그림자 강하게)
                     ctx.shadowColor = 'rgba(0,0,0,0.15)';
                     ctx.shadowBlur = 12;
                     ctx.shadowOffsetY = 4;
                     ctx.fillStyle = badgeBg;
                     
+                    // 둥근 사각형 그리기
                     ctx.beginPath();
                     ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 8);
                     ctx.fill();
 
-                    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+                    // 뱃지 텍스트
+                    ctx.shadowColor = 'rgba(0,0,0,0.6)'; // 텍스트 섀도우 복구
                     ctx.shadowBlur = 6;
                     ctx.shadowOffsetX = 1;
                     ctx.shadowOffsetY = 1;
@@ -673,22 +668,23 @@
                     ctx.letterSpacing = "0px";
                 }
 
-                // 7. 맨 아래 두꺼운 선 (둥근 모서리에 맞게 자동으로 잘려나감!)
+                // 6. 맨 아래 두꺼운 선 그리기 (그림자 없음)
                 ctx.shadowColor = 'transparent';
                 ctx.fillStyle = badgeBg; 
                 ctx.fillRect(0, canvas.height - 7, canvas.width, 7);
 
-                // 8. 둥근 투명 배경 PNG로 다운로드
+                // 7. 이미지 파일로 변환 및 다운로드
                 const link = document.createElement('a');
                 link.download = nameValue + '_포스터.png';
                 link.href = canvas.toDataURL('image/png'); // 투명도 유지를 위해 반드시 png
                 link.click();
 
+                // 버튼 원상복구
                 btn.innerText = "고화질 이미지 저장";
                 btn.style.opacity = "1";
                 btn.style.pointerEvents = "auto";
                 
-            }, 100);
+            }, 100); 
         });
     </script>
 </body>

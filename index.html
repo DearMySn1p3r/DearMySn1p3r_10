@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCH 캐치프레이즈 에디터 (커스텀 컬러 & 화이트 UI)</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title>ARCH 캐치프레이즈 에디터 (Canvas Native)</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     <style>
-        /* --- 기본 UI 테마 변수 (화이트 테마) --- */
         :root {
             --bg-page: #f4f6f9;       
             --bg-panel: #ffffff;      
@@ -18,8 +16,8 @@
             --input-bg: #f8fafc;      
         }
 
-        /* --- 프리뷰 제어 변수 (JS로 제어됨) --- */
         #captureArea {
+            --fallback-bg: #d1d5db;
             --badge-bg: #E91E63;        
             --badge-text: #ffffff;      
             --card-primary-text: #ffffff; 
@@ -42,9 +40,6 @@
             flex-wrap: wrap;
         }
 
-        /* ---------------------------------
-           1. 왼쪽: 미니멀 에디터 패널
-        --------------------------------- */
         .editor-panel {
             background-color: var(--bg-panel);
             padding: 32px;
@@ -252,7 +247,7 @@
         }
 
         /* ---------------------------------
-           2. 오른쪽: 결과물 캔버스
+           2. 오른쪽: 결과물 미리보기 (웹용)
         --------------------------------- */
         .preview-panel {
             display: flex;
@@ -260,17 +255,17 @@
             align-items: center;
         }
 
+        /* 이제 이 부분은 "순수하게 미리보기용"으로만 쓰입니다. (다운로드는 Canvas로 진행) */
         .phrase-container {
             width: 800px;
             height: 600px;
-            flex: none; /* 부모 레이아웃 간섭 차단 */
+            flex: none; 
             box-sizing: border-box; 
             position: relative;
-            background-color: #d1d5db; 
+            background-color: var(--fallback-bg); 
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
-            border: none; 
             border-bottom: 7px solid var(--border-color);
         }
 
@@ -278,14 +273,12 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center top; /* 이미지 넓적해짐 및 크롭 방지 */
+            object-position: center top; 
             position: absolute;
             top: 0;
             left: 0;
             z-index: 1;
             display: none; 
-            image-rendering: auto;
-            transform: translateZ(0);
         }
 
         .text-overlay-bottom {
@@ -293,12 +286,12 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 100%; /* 검은 띠 버그 방지를 위해 전체 덮기 */
+            height: 100%; 
             background: linear-gradient(
                 to bottom,
                 rgba(0,0,0,0) 0%,
                 rgba(0,0,0,0) 50%,
-                rgba(0,0,0,0.7) 100%
+                rgba(0,0,0,0.8) 100%
             );
             z-index: 2;
             pointer-events: none;
@@ -367,17 +360,6 @@
             font-weight: 300;
             word-break: keep-all;
         }
-
-        /* 🔥 [캡처 모드 전용 스타일] 테두리 실선 및 그라데이션 충돌 100% 방지 */
-        .capture-mode {
-            box-shadow: none !important;
-            border-bottom: none !important;
-            border-radius: 0 !important; 
-        }
-        
-        .capture-mode .text-overlay-bottom {
-            background: rgba(0, 0, 0, 0.6) !important;
-        }
     </style>
 </head>
 <body>
@@ -427,6 +409,10 @@
         
         <div class="color-grid">
             <div class="color-item">
+                <input type="color" id="fallbackBgInput" value="#d1d5db">
+                <label for="fallbackBgInput">기본 배경색</label>
+            </div>
+            <div class="color-item">
                 <input type="color" id="badgeBgInput" value="#E91E63">
                 <label for="badgeBgInput">뱃지 배경 / 선</label>
             </div>
@@ -451,10 +437,8 @@
 
     <div class="preview-panel">
         <div class="phrase-container" id="captureArea">
-            
             <img src="" alt="" class="character-image" id="previewImg">
             <div class="text-overlay-bottom"></div>
-
             <div class="class-badge hidden preview-text-shadow" id="previewClassBadge"></div>
             
             <div class="text-content-container">
@@ -466,6 +450,7 @@
     </div>
 
     <script>
+        // --- 1. 색상 동기화 (미리보기용) ---
         function syncColor(inputId, cssVarName) {
             const picker = document.getElementById(inputId);
             picker.addEventListener('input', function(e) {
@@ -473,6 +458,8 @@
             });
             document.getElementById('captureArea').style.setProperty(cssVarName, picker.value);
         }
+
+        syncColor('fallbackBgInput', '--fallback-bg');
 
         const badgePicker = document.getElementById('badgeBgInput');
         badgePicker.addEventListener('input', function(e) {
@@ -487,18 +474,24 @@
         syncColor('cardPrimaryTextInput', '--card-primary-text');
         syncColor('threatLevelInput', '--threat-level-text');
 
+        // --- 2. 텍스트 및 이미지 동기화 (미리보기용) ---
+        let uploadedImage = new Image(); // Canvas 렌더링용 원본 이미지 저장 객체
+
         document.getElementById('imgInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             const fileNameText = document.getElementById('fileNameText');
             
             if (file) {
                 fileNameText.innerText = file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name;
-                
                 const reader = new FileReader();
                 reader.onload = function(event) {
+                    const src = event.target.result;
+                    // 미리보기 DOM 업데이트
                     const imgEl = document.getElementById('previewImg');
-                    imgEl.src = event.target.result;
+                    imgEl.src = src;
                     imgEl.style.display = 'block'; 
+                    // Canvas용 이미지 객체 로드
+                    uploadedImage.src = src;
                 }
                 reader.readAsDataURL(file);
             } else {
@@ -525,7 +518,6 @@
                 const wrapperEl = wrapperId ? document.getElementById(wrapperId) : previewEl;
                 
                 previewEl.innerText = value;
-
                 if (value.trim() === '') {
                     wrapperEl.classList.add('hidden');
                 } else {
@@ -538,81 +530,171 @@
         syncText('nameInput', 'previewName');
         syncText('phraseInput', 'previewPhrase');
 
-        // 🔥 [진짜 최종 완벽 캡처 로직] DPR 강제 고정 및 독립 DOM 적용
+        // 🔥 [완전 최종] Native Canvas Drawing 로직 (html2canvas 완전 버림!)
         document.getElementById('downloadBtn').addEventListener('click', function() {
-            const original = document.getElementById('captureArea');
             const btn = document.getElementById('downloadBtn');
             const nameValue = document.getElementById('nameInput').value || '캐치프레이즈';
             
-            btn.innerText = "이미지 생성 중 (잠시만 기다려주세요)...";
+            btn.innerText = "고화질 렌더링 중...";
             btn.style.opacity = "0.7";
             btn.style.pointerEvents = "none";
 
-            // 1. 원본 복제 및 캡처 모드 클래스 부여
-            const clone = original.cloneNode(true);
-            clone.classList.add('capture-mode');
-
-            // 2. 완벽히 독립된 레이아웃으로 고정 (flex 간섭 원천 차단)
-            clone.style.position = 'fixed';
-            clone.style.top = '0';
-            clone.style.left = '0';
-            clone.style.width = '800px';
-            clone.style.height = '600px';
-            clone.style.margin = '0';
-            clone.style.transform = 'none';
-            clone.style.flex = 'none';
-            clone.style.zIndex = '-9999'; 
-            clone.style.display = 'block';
-
-            document.body.appendChild(clone);
-
-            // 3. DPR(Device Pixel Ratio) 강제 고정을 통한 찌그러짐 방지
-            const originalDPR = window.devicePixelRatio;
-            Object.defineProperty(window, 'devicePixelRatio', {
-                configurable: true,
-                get: () => 1
-            });
-
+            // 브라우저 렌더링 차단 방지를 위해 setTimeout 사용
             setTimeout(() => {
-                // 4. scale 1 고정으로 안전하게 캡처
-                html2canvas(clone, {
-                    scale: 1, 
-                    useCORS: true,
-                    backgroundColor: null,
-                    logging: false
-                }).then(canvas => {
-                    // 캡처 완료 후 DPR 원상 복구
-                    Object.defineProperty(window, 'devicePixelRatio', {
-                        configurable: true,
-                        get: () => originalDPR
-                    });
+                // 1. 고해상도 캔버스 생성 (800x600 고정)
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 800;
+                canvas.height = 600;
 
-                    document.body.removeChild(clone);
+                // 데이터 가져오기
+                const fallbackBg = document.getElementById('fallbackBgInput').value;
+                const badgeBg = document.getElementById('badgeBgInput').value;
+                const badgeTextCol = document.getElementById('badgeTextInput').value;
+                const primaryTextCol = document.getElementById('cardPrimaryTextInput').value;
+                const threatCol = document.getElementById('threatLevelInput').value;
 
-                    const link = document.createElement('a');
-                    link.download = nameValue + '_포스터.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
+                const classVal = document.getElementById('classInput').value.trim().toUpperCase();
+                const badgeStr = classVal ? classVal + '-CLASS ENTITY' : '';
+                const threatVal = document.getElementById('threatInput').value.toUpperCase();
+                const nameVal = document.getElementById('nameInput').value.toUpperCase();
+                const phraseVal = document.getElementById('phraseInput').value;
 
-                    btn.innerText = "고화질 이미지 저장";
-                    btn.style.opacity = "1";
-                    btn.style.pointerEvents = "auto";
-                }).catch(err => {
-                    Object.defineProperty(window, 'devicePixelRatio', {
-                        configurable: true,
-                        get: () => originalDPR
-                    });
+                // 2. 배경 그리기 (이미지 없으면 단색)
+                ctx.fillStyle = fallbackBg;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                    if (document.body.contains(clone)) {
-                        document.body.removeChild(clone);
+                if (uploadedImage.src && uploadedImage.src !== window.location.href) {
+                    // 🔥 object-fit: cover + object-position: center top 완벽 구현
+                    const imgRatio = uploadedImage.width / uploadedImage.height;
+                    const canvasRatio = canvas.width / canvas.height;
+                    let renderW, renderH, renderX, renderY;
+
+                    if (imgRatio > canvasRatio) {
+                        // 이미지가 캔버스보다 가로로 김 (좌우 크롭)
+                        renderH = canvas.height;
+                        renderW = uploadedImage.width * (canvas.height / uploadedImage.height);
+                        renderX = (canvas.width - renderW) / 2; // Center
+                        renderY = 0; // Top
+                    } else {
+                        // 이미지가 캔버스보다 세로로 김 (하단 크롭)
+                        renderW = canvas.width;
+                        renderH = uploadedImage.height * (canvas.width / uploadedImage.width);
+                        renderX = 0; // Center (이미 꽉 참)
+                        renderY = 0; // Top
                     }
-                    console.error("캡처 오류:", err);
-                    alert("이미지 저장 중 오류가 발생했습니다.");
-                    btn.innerText = "고화질 이미지 저장";
-                    btn.style.opacity = "1";
-                    btn.style.pointerEvents = "auto";
-                });
-            }, 100); 
+                    ctx.drawImage(uploadedImage, renderX, renderY, renderW, renderH);
+                }
+
+                // 3. 그라데이션 오버레이 (버그 없는 순수 Canvas 그라데이션)
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, 'rgba(0,0,0,0)');
+                gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // --- 텍스트 렌더링 설정 ---
+                // Canvas는 커스텀 글꼴 렌더링 시 약간의 딜레이가 있을 수 있으나 에디터 사용 중엔 이미 로드됨
+                ctx.shadowColor = 'rgba(0,0,0,0.6)';
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+
+                // 4. 하단부터 위로 텍스트 그리기 (Bottom-up Layout)
+                let currentY = canvas.height - 40; // bottom: 40px
+
+                // 4-1. 캐치프레이즈 (자동 줄바꿈 흉내 - \n 기준)
+                if (phraseVal) {
+                    ctx.fillStyle = primaryTextCol;
+                    ctx.font = '300 17px Pretendard, sans-serif';
+                    ctx.textBaseline = 'bottom';
+                    ctx.globalAlpha = 0.95; // opacity 0.95
+                    
+                    const lines = phraseVal.split('\n').reverse(); // 밑에서부터 그리므로 역순
+                    const lineHeight = 17 * 1.6; // line-height: 1.6
+                    lines.forEach(line => {
+                        ctx.fillText(line, 50, currentY);
+                        currentY -= lineHeight;
+                    });
+                    ctx.globalAlpha = 1.0;
+                    currentY -= 10; // 이름과 캐치프레이즈 사이 간격
+                }
+
+                // 4-2. 이름 (NAME)
+                if (nameVal) {
+                    ctx.fillStyle = primaryTextCol;
+                    ctx.font = '900 88px Pretendard, sans-serif';
+                    ctx.textBaseline = 'bottom';
+                    ctx.letterSpacing = "-2px"; 
+                    ctx.fillText(nameVal, 50, currentY);
+                    ctx.letterSpacing = "0px";
+                    currentY -= 88; // 폰트 크기만큼 위로
+                    currentY -= 6;  // 위협등급과 이름 사이 간격
+                }
+
+                // 4-3. 위협 등급 (THREAT LEVEL)
+                if (threatVal) {
+                    ctx.fillStyle = threatCol;
+                    ctx.font = '900 17px Pretendard, sans-serif';
+                    ctx.textBaseline = 'bottom';
+                    ctx.letterSpacing = "2px";
+                    ctx.fillText(`[ THREAT LEVEL: ${threatVal} ]`, 50, currentY);
+                    ctx.letterSpacing = "0px";
+                }
+
+                // 5. 우측 상단 CLASS 뱃지 그리기
+                if (badgeStr) {
+                    ctx.font = '800 14px Pretendard, sans-serif';
+                    ctx.letterSpacing = "1px";
+                    const textWidth = ctx.measureText(badgeStr).width;
+                    const paddingX = 20;
+                    const paddingY = 10;
+                    const badgeW = textWidth + (paddingX * 2);
+                    const badgeH = 14 + (paddingY * 2);
+                    const badgeX = canvas.width - 40 - badgeW; // right: 40px
+                    const badgeY = 40; // top: 40px
+
+                    // 뱃지 배경 (그림자 강하게)
+                    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+                    ctx.shadowBlur = 12;
+                    ctx.shadowOffsetY = 4;
+                    ctx.fillStyle = badgeBg;
+                    
+                    // 둥근 사각형 그리기 (최신 브라우저 지원)
+                    ctx.beginPath();
+                    ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 8);
+                    ctx.fill();
+
+                    // 뱃지 텍스트
+                    ctx.shadowColor = 'rgba(0,0,0,0.6)'; // 텍스트 섀도우 복구
+                    ctx.shadowBlur = 6;
+                    ctx.shadowOffsetX = 1;
+                    ctx.shadowOffsetY = 1;
+                    ctx.fillStyle = badgeTextCol;
+                    ctx.textBaseline = 'middle';
+                    // 캔버스의 roundRect 안에서 텍스트 수직 중앙 맞추기
+                    ctx.fillText(badgeStr, badgeX + paddingX, badgeY + (badgeH / 2) + 1); 
+                    ctx.letterSpacing = "0px";
+                }
+
+                // 6. 맨 아래 두꺼운 선 그리기 (그림자 없음)
+                ctx.shadowColor = 'transparent';
+                ctx.fillStyle = badgeBg; // border-color는 badge-bg와 동기화됨
+                ctx.fillRect(0, canvas.height - 7, canvas.width, 7);
+
+                // 7. 이미지 파일로 변환 및 다운로드
+                const link = document.createElement('a');
+                link.download = nameValue + '_포스터.png';
+                link.href = canvas.toDataURL('image/png'); // 고화질 PNG 저장
+                link.click();
+
+                // 버튼 원상복구
+                btn.innerText = "고화질 이미지 저장";
+                btn.style.opacity = "1";
+                btn.style.pointerEvents = "auto";
+                
+            }, 100); // 렌더링 블로킹 방지용 딜레이
         });
     </script>
 </body>

@@ -3,36 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCH 캐치프레이즈 에디터</title>
+    <title>ARCH 캐치프레이즈 에디터 (커스텀 컬러 & 화이트 UI)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     <style>
-        /* --- 기본 테마 변수 --- */
+        /* 기본 UI (화이트 테마) 변수 */
         :root {
-            --bg-page: #f4f6f9;       /* 페이지 배경 */
-            --bg-panel: #ffffff;      /* 에디터 배경 */
-            --border-light: #e2e8f0;  /* 옅은 테두리 */
-            --border-focus: #3b82f6;  /* 포커스 테두리 (파란색) */
-            --text-main: #0f172a;     /* 메인 텍스트 */
-            --text-sub: #64748b;      /* 보조 텍스트 */
-            --input-bg: #f8fafc;      /* 입력칸 배경 */
+            --bg-main: #f3f4f6;       /* 전체 배경 (아주 밝은 회색) */
+            --bg-panel: #ffffff;      /* 에디터 배경 (흰색) */
+            --border-color: #e5e7eb;  /* 테두리 색상 */
+            --text-main: #1f2937;     /* 기본 텍스트 (거의 검은색) */
+            --text-sub: #6b7280;      /* 보조 텍스트 */
+            --input-bg: #f9fafb;      /* 입력칸 배경 */
         }
 
-        /* --- 프리뷰 제어 변수 --- */
+        /* --- 프리뷰 카드 커스텀 컬러 변수 (JS로 제어됨) --- */
         #captureArea {
-            --fallback-bg: #d1d5db;
-            --gradient-base: #000000;
-            --badge-bg: #E91E63;
-            --badge-text: #ffffff;
-            --card-primary-text: #ffffff;
-            --threat-level-text: #E91E63;
+            --fallback-bg: #d1d5db;     /* 기본 회색 배경 */
+            --gradient-base: #000000;   /* 하단 그라데이션 베이스 색상 (검정) */
+            --badge-bg: #E91E63;        /* 뱃지 배경색 (핑크) */
+            --badge-text: #ffffff;      /* 뱃지 텍스트색 (흰색) */
+            --card-primary-text: #ffffff; /* 이름, 캐치프레이즈 텍스트색 (흰색) */
+            --threat-level-text: #E91E63; /* 위협 등급 텍스트색 (핑크) */
         }
 
         body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Pretendard', -apple-system, sans-serif;
             margin: 0;
             padding: 40px 20px;
-            background-color: var(--bg-page);
+            background-color: var(--bg-main);
             color: var(--text-main);
             display: flex;
             gap: 40px;
@@ -44,208 +43,155 @@
         }
 
         /* ---------------------------------
-           1. 왼쪽: 미니멀 에디터 패널
+           1. 왼쪽: 화이트 UI 에디터 패널
         --------------------------------- */
         .editor-panel {
             background-color: var(--bg-panel);
             padding: 32px;
-            border-radius: 24px;
-            width: 400px;
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.04);
-            box-sizing: border-box;
+            border-radius: 20px;
+            width: 380px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
         }
 
         .editor-header {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .editor-header img {
-            width: 36px;
-            height: 36px;
-            object-fit: contain;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
 
         .editor-header h1 {
             margin: 0;
             font-size: 20px;
             font-weight: 700;
-            letter-spacing: -0.5px;
+            color: var(--text-main);
         }
 
-        .divider {
-            height: 1px;
-            background-color: var(--border-light);
-            margin: 24px 0;
+        .editor-section {
+            margin-bottom: 25px;
         }
 
-        .section-title {
-            font-size: 13px;
+        .editor-section-title {
+            font-size: 15px;
             font-weight: 700;
-            color: var(--text-sub);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            color: var(--text-main);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-color);
         }
 
-        /* 입력 그룹 */
-        .input-group {
-            margin-bottom: 16px;
+        .form-group {
+            margin-bottom: 18px;
         }
 
-        .input-group label {
+        .form-group label {
             display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
+            margin-bottom: 8px;
+            font-size: 14px;
             font-weight: 600;
             color: var(--text-main);
         }
 
-        .input-group input[type="text"], 
-        .input-group textarea {
+        .form-group input[type="text"], 
+        .form-group textarea {
             width: 100%;
-            padding: 12px 14px;
-            border: 1px solid var(--border-light);
+            padding: 14px 16px;
+            border: 1px solid var(--border-color);
             background-color: var(--input-bg);
-            border-radius: 10px;
+            color: var(--text-main);
+            border-radius: 12px;
             box-sizing: border-box;
             font-family: inherit;
-            font-size: 14px;
-            color: var(--text-main);
+            font-size: 15px;
             transition: all 0.2s ease;
         }
 
-        .input-group textarea {
-            resize: none;
-            line-height: 1.5;
-        }
-
-        .input-group input[type="text"]:focus, 
-        .input-group textarea:focus {
-            outline: none;
-            border-color: var(--border-focus);
-            background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        /* 파일 업로드 디자인 커스텀 */
-        .file-upload-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px;
-            border: 1px dashed #cbd5e1;
-            border-radius: 10px;
-            background-color: var(--input-bg);
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .file-upload-wrapper:hover {
-            background-color: #f1f5f9;
-        }
-
-        .file-upload-wrapper input[type="file"] {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .file-upload-text {
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 10px 0;
             font-size: 14px;
-            font-weight: 500;
             color: var(--text-sub);
-            pointer-events: none;
+            cursor: pointer;
         }
 
-        /* 색상 선택기 (Swatch 스타일) */
-        .color-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        /* 색상 선택기 스타일 */
+        .color-picker-group {
+            display: flex;
+            flex-wrap: wrap;
             gap: 12px;
         }
 
-        .color-item {
+        .color-picker-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 12px;
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-light);
-            border-radius: 10px;
-            transition: border-color 0.2s;
+            gap: 8px;
+            width: calc(50% - 6px);
+            margin-bottom: 5px;
         }
 
-        .color-item:hover {
-            border-color: #cbd5e1;
-        }
-
-        .color-item label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-sub);
+        .color-picker-item input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            padding: 0;
             cursor: pointer;
+            box-shadow: inset 0 0 0 1px var(--border-color);
+        }
+
+        .color-picker-item label {
+            font-size: 13px;
+            color: var(--text-sub);
             margin: 0;
             flex: 1;
         }
 
-        /* 기본 input color 디자인 숨기기 및 다듬기 */
-        .color-item input[type="color"] {
-            -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            padding: 0;
-            background: none;
+        .form-group input[type="text"]:focus, 
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6; /* Focus시 파란색 포인트 */
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
         }
 
-        .color-item input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
+        .form-group textarea {
+            resize: none;
+            line-height: 1.6;
         }
 
-        .color-item input[type="color"]::-webkit-color-swatch {
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 6px;
-        }
-
-        /* 다운로드 버튼 */
         .download-btn {
             width: 100%;
-            padding: 16px;
+            padding: 18px;
             background-color: var(--text-main);
             color: white;
             border: none;
             border-radius: 12px;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 10px;
-            transition: transform 0.1s, box-shadow 0.2s, background-color 0.2s;
+            margin-top: 15px;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(17, 24, 39, 0.1);
         }
 
         .download-btn:hover {
-            background-color: #1e293b;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateY(-1px);
-        }
-
-        .download-btn:active {
-            transform: translateY(1px);
+            background-color: #111827;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(17, 24, 39, 0.15);
         }
 
         /* ---------------------------------
-           2. 오른쪽: 결과물 캔버스
+           2. 오른쪽: 결과물 카드 (패턴 없음, 커스텀 컬러)
         --------------------------------- */
         .preview-panel {
             display: flex;
@@ -257,13 +203,13 @@
             width: 800px;
             height: 600px;
             position: relative;
-            background-color: var(--fallback-bg);
+            background-color: var(--fallback-bg); /* 커스텀 배경색 */
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
         }
 
+        /* 업로드된 캐릭터 이미지 */
         .character-image {
             width: 100%;
             height: 100%;
@@ -272,20 +218,23 @@
             top: 0;
             left: 0;
             z-index: 1;
-            display: none;
+            display: none; /* 초기에는 숨김 */
         }
 
+        /* 텍스트 가독성을 위한 하단 그라데이션 (커스텀 베이스 색상, 패턴 제거됨) */
         .text-overlay-bottom {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
             height: 55%;
+            /* 투명에서 커스텀 그라데이션 베이스 색상으로 */
             background: linear-gradient(to bottom, transparent, var(--gradient-base));
             z-index: 2;
             pointer-events: none;
         }
 
+        /* 텍스트 내용 컨테이너 */
         .text-content-container {
             position: absolute;
             bottom: 40px;
@@ -295,36 +244,42 @@
             text-align: left;
         }
 
+        /* --- 프리뷰 카드 모든 글씨 그림자 효과 --- */
         .preview-text-shadow {
-            text-shadow: 1px 1px 6px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
         }
 
         .class-badge {
             position: absolute;
             top: 40px;
             right: 40px;
-            background-color: var(--badge-bg);
-            color: var(--badge-text);
+            background-color: var(--badge-bg); /* 커스텀 뱃지 배경색 */
+            color: var(--badge-text);      /* 커스텀 뱃지 텍스트색 */
             padding: 10px 20px;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 800;
             border-radius: 8px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
             z-index: 4;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
-        .hidden { display: none !important; }
+        /* 숨김 처리용 클래스 */
+        .hidden {
+            display: none !important;
+        }
 
+        /* THREAT LEVEL (테두리와 배경 제거됨, 커스텀 텍스트색) */
         .threat-level {
             display: inline-block;
             margin-bottom: 14px;
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 700;
-            color: var(--threat-level-text);
+            color: var(--threat-level-text); /* 커스텀 텍스트색 */
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.8px;
+            /* 테두리와 배경 완전히 제거 */
             border: none; 
             padding: 0;
         }
@@ -334,17 +289,17 @@
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: -2px;
-            margin: 0 0 16px 0;
+            margin: 0 0 18px 0;
             line-height: 1;
-            color: var(--card-primary-text);
+            color: var(--card-primary-text); /* 커스텀 텍스트색 */
         }
 
         .catchphrase {
             font-size: 20px;
-            line-height: 1.6;
+            line-height: 1.7;
             margin: 0;
-            color: var(--card-primary-text);
-            opacity: 0.95;
+            color: var(--card-primary-text); /* 커스텀 텍스트색, 살짝 투명도 조절 */
+            opacity: 0.98;
             white-space: pre-wrap;
             font-weight: 400;
             word-break: keep-all;
@@ -359,76 +314,82 @@
             <h1>ARCH 캐치프레이즈 에디터</h1>
         </div>
 
-        <div class="section-title">✏️ 텍스트 입력</div>
-
-        <div class="input-group">
-            <label>배경 이미지</label>
-            <div class="file-upload-wrapper">
-                <span class="file-upload-text" id="fileNameText">클릭하여 이미지 업로드</span>
+        <div class="editor-section">
+            <h2 class="editor-section-title">1. 콘텐츠 입력</h2>
+            
+            <div class="form-group">
+                <label>배경 이미지 업로드</label>
                 <input type="file" id="imgInput" accept="image/*">
             </div>
-        </div>
 
-        <div class="input-group">
-            <label>클래스 (CLASS)</label>
-            <input type="text" id="classInput" placeholder="예: S-CLASS ENTITY">
-        </div>
-
-        <div class="input-group">
-            <label>위협 등급 (THREAT LEVEL)</label>
-            <input type="text" id="threatInput" placeholder="예: CHAOTIC">
-        </div>
-
-        <div class="input-group">
-            <label>이름 (NAME)</label>
-            <input type="text" id="nameInput" placeholder="이름을 입력하세요">
-        </div>
-
-        <div class="input-group">
-            <label>캐치프레이즈</label>
-            <textarea id="phraseInput" rows="4" placeholder="캐치프레이즈를 입력하세요 (엔터로 줄바꿈)"></textarea>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="section-title">🎨 디자인 커스텀</div>
-        
-        <div class="color-grid">
-            <div class="color-item">
-                <input type="color" id="fallbackBgInput" value="#d1d5db">
-                <label for="fallbackBgInput">기본 배경색</label>
+            <div class="form-group">
+                <label>CLASS (우측 상단)</label>
+                <input type="text" id="classInput" placeholder="예: S-CLASS ENTITY">
             </div>
-            <div class="color-item">
-                <input type="color" id="gradientBaseInput" value="#000000">
-                <label for="gradientBaseInput">하단 음영</label>
+
+            <div class="form-group">
+                <label>위협 등급 (THREAT LEVEL)</label>
+                <input type="text" id="threatInput" placeholder="예: CHAOTIC">
             </div>
-            <div class="color-item">
-                <input type="color" id="badgeBgInput" value="#E91E63">
-                <label for="badgeBgInput">뱃지 배경</label>
+
+            <div class="form-group">
+                <label>이름 (NAME)</label>
+                <input type="text" id="nameInput" placeholder="이름을 입력하세요">
             </div>
-            <div class="color-item">
-                <input type="color" id="badgeTextInput" value="#ffffff">
-                <label for="badgeTextInput">뱃지 텍스트</label>
-            </div>
-            <div class="color-item">
-                <input type="color" id="threatLevelInput" value="#E91E63">
-                <label for="threatLevelInput">위협 등급</label>
-            </div>
-            <div class="color-item">
-                <input type="color" id="cardPrimaryTextInput" value="#ffffff">
-                <label for="cardPrimaryTextInput">메인 텍스트</label>
+
+            <div class="form-group">
+                <label>캐치프레이즈</label>
+                <textarea id="phraseInput" rows="5" placeholder="캐치프레이즈를 입력하세요 (엔터로 줄바꿈)"></textarea>
             </div>
         </div>
 
-        <div class="divider"></div>
+        <div class="editor-section">
+            <h2 class="editor-section-title">2. 디자인 커스텀 (색상)</h2>
+            <div class="color-picker-group">
+                
+                <div class="color-picker-item">
+                    <input type="color" id="fallbackBgInput" value="#d1d5db">
+                    <label>기본 배경색</label>
+                </div>
 
-        <button class="download-btn" id="downloadBtn">이미지 저장하기</button>
+                <div class="color-picker-item">
+                    <input type="color" id="gradientBaseInput" value="#000000">
+                    <label>하단 그라데이션 베이스</label>
+                </div>
+
+                <div class="color-picker-item">
+                    <input type="color" id="badgeBgInput" value="#E91E63">
+                    <label>뱃지 배경색</label>
+                </div>
+
+                <div class="color-picker-item">
+                    <input type="color" id="badgeTextInput" value="#ffffff">
+                    <label>뱃지 텍스트색</label>
+                </div>
+
+                <div class="color-picker-item">
+                    <input type="color" id="cardPrimaryTextInput" value="#ffffff">
+                    <label>이름 & 캐치프레이즈색</label>
+                </div>
+
+                <div class="color-picker-item">
+                    <input type="color" id="threatLevelInput" value="#E91E63">
+                    <label>위협 등급색</label>
+                </div>
+
+            </div>
+        </div>
+
+        <button class="download-btn" id="downloadBtn">고화질 이미지 저장</button>
     </div>
 
     <div class="preview-panel">
         <div class="phrase-container" id="captureArea">
+            
             <img src="" alt="" class="character-image" id="previewImg">
+            
             <div class="text-overlay-bottom"></div>
+
             <div class="class-badge hidden preview-text-shadow" id="previewClassBadge"></div>
             
             <div class="text-content-container">
@@ -440,12 +401,13 @@
     </div>
 
     <script>
-        // 색상 실시간 동기화
+        // --- 1. 색상 실시간 동기화 처리 ---
         function syncColor(inputId, cssVarName) {
             const picker = document.getElementById(inputId);
             picker.addEventListener('input', function(e) {
                 document.getElementById('captureArea').style.setProperty(cssVarName, e.target.value);
             });
+            // 초기값 설정
             document.getElementById('captureArea').style.setProperty(cssVarName, picker.value);
         }
 
@@ -456,26 +418,21 @@
         syncColor('cardPrimaryTextInput', '--card-primary-text');
         syncColor('threatLevelInput', '--threat-level-text');
 
-        // 파일 업로드 처리 및 파일명 표시
+        // --- 2. 이미지 업로드 처리 ---
         document.getElementById('imgInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
-            const fileNameText = document.getElementById('fileNameText');
-            
             if (file) {
-                fileNameText.innerText = file.name; // 버튼 텍스트를 파일명으로 변경
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const imgEl = document.getElementById('previewImg');
                     imgEl.src = event.target.result;
-                    imgEl.style.display = 'block'; 
+                    imgEl.style.display = 'block'; // 이미지가 로드되면 보이게 함
                 }
                 reader.readAsDataURL(file);
-            } else {
-                fileNameText.innerText = "클릭하여 이미지 업로드";
             }
         });
 
-        // 텍스트 실시간 동기화
+        // --- 3. 텍스트 입력 실시간 동기화 및 빈 값 처리 ---
         function syncText(inputId, previewId, wrapperId = null) {
             document.getElementById(inputId).addEventListener('input', function(e) {
                 const value = e.target.value;
@@ -484,6 +441,7 @@
                 
                 previewEl.innerText = value;
 
+                // 값이 비어있으면 요소를 숨겨서 불필요한 브라켓이 안 보이게 함
                 if (value.trim() === '') {
                     wrapperEl.classList.add('hidden');
                 } else {
@@ -497,11 +455,11 @@
         syncText('nameInput', 'previewName');
         syncText('phraseInput', 'previewPhrase');
 
-        // 이미지 저장
+        // --- 4. 고화질 다운로드 기능 ---
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const captureArea = document.getElementById('captureArea');
             const btn = document.getElementById('downloadBtn');
-            const nameValue = document.getElementById('nameInput').value || 'ARCH';
+            const nameValue = document.getElementById('nameInput').value || '캐치프레이즈';
             
             const originalText = btn.innerText;
             btn.innerText = "저장 중...";
@@ -510,7 +468,7 @@
 
             html2canvas(captureArea, {
                 scale: 3, 
-                backgroundColor: null,
+                backgroundColor: null, // 커스텀 배경색을 유지하기 위해 null로 설정
                 useCORS: true
             }).then(canvas => {
                 const link = document.createElement('a');

@@ -263,8 +263,7 @@
         .phrase-container {
             width: 800px;
             height: 600px;
-            /* 🔥 [수정] 부모 flex의 간섭을 완전히 끊어버림 */
-            flex: none; 
+            flex: none; /* 부모 레이아웃 간섭 차단 */
             box-sizing: border-box; 
             position: relative;
             background-color: #d1d5db;
@@ -354,7 +353,6 @@
         }
 
         .catchphrase {
-            /* 🔥 [수정] 15px에서 17px로 살짝 키움 */
             font-size: 17px;
             line-height: 1.6;
             margin: 0;
@@ -364,6 +362,18 @@
             font-weight: 300;
             word-break: keep-all;
         }
+
+        /* 🔥 [캡처 모드 전용 스타일] html2canvas 렌더링 버그 원천 차단 */
+        .capture-mode {
+            box-shadow: none !important;
+            border-bottom: none !important;
+            border-radius: 0 !important; /* 캡처 시 외곽선 깔끔하게 처리 */
+        }
+        
+        .capture-mode .text-overlay-bottom {
+            background: rgba(0, 0, 0, 0.6) !important;
+        }
+
     </style>
 </head>
 <body>
@@ -524,7 +534,7 @@
         syncText('nameInput', 'previewName');
         syncText('phraseInput', 'previewPhrase');
 
-        // 🔥 [끝판왕 해결책] 완전히 독립된 복제본(Clone) 기반 캡처 로직
+        // 🔥 [완벽 안정화 캡처 로직] 독립 DOM + 캡처 모드 클래스 적용
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const original = document.getElementById('captureArea');
             const btn = document.getElementById('downloadBtn');
@@ -534,10 +544,13 @@
             btn.style.opacity = "0.7";
             btn.style.pointerEvents = "none";
 
-            // 1. 원본을 건드리지 않고, 완벽하게 복사
+            // 1. 원본 복제
             const clone = original.cloneNode(true);
 
-            // 2. 부모 레이아웃(Flex 등)의 간섭을 100% 차단하는 고정 스타일
+            // 2. 캡처 모드 클래스 추가 (그라데이션 및 테두리 버그 제거)
+            clone.classList.add('capture-mode');
+
+            // 3. 부모 레이아웃 간섭 100% 차단용 절대 고정 스타일
             clone.style.position = 'fixed';
             clone.style.top = '0';
             clone.style.left = '0';
@@ -546,28 +559,21 @@
             clone.style.margin = '0';
             clone.style.transform = 'none';
             clone.style.flex = 'none';
-            // 화면 렌더링에 방해되지 않도록 최하단 배치 (투명도는 건드리지 않음)
             clone.style.zIndex = '-9999'; 
             clone.style.display = 'block';
 
-            // 3. 이전 단계의 버그(실선, 그라데이션 분할) 방지 로직을 복제본에 적용
-            clone.style.borderBottom = 'none';
-            clone.style.boxShadow = 'none';
-            const cloneOverlay = clone.querySelector('.text-overlay-bottom');
-            if (cloneOverlay) cloneOverlay.style.background = 'rgba(0,0,0,0.6)';
-
-            // 4. 복제본을 body에 붙임 (독립적인 렌더링 컨텍스트 확보)
+            // 4. 복제본을 DOM에 임시로 붙임
             document.body.appendChild(clone);
 
             setTimeout(() => {
-                // 5. 간섭 없는 순수한 복제본만 캡처
+                // 5. 캡처 실행 (scale 2 고정, 충돌 옵션 제거)
                 html2canvas(clone, {
-                    scale: window.devicePixelRatio || 2, 
+                    scale: 2, 
                     useCORS: true,
                     backgroundColor: null,
                     logging: false
                 }).then(canvas => {
-                    // 6. 캡처가 끝나면 흔적 없이 복제본 삭제
+                    // 6. 삭제 후 다운로드
                     document.body.removeChild(clone);
 
                     const link = document.createElement('a');

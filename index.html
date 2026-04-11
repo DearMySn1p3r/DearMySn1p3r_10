@@ -519,7 +519,7 @@
         syncText('nameInput', 'previewName');
         syncText('phraseInput', 'previewPhrase');
 
-        // --- 캡처 로직 최적화 (사용자 해결책 적용) ---
+        // --- 완벽한 html2canvas 캡처 최적화 로직 ---
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const captureArea = document.getElementById('captureArea');
             const btn = document.getElementById('downloadBtn');
@@ -529,32 +529,37 @@
             btn.style.opacity = "0.7";
             btn.style.pointerEvents = "none";
 
-            // 1. 캡처 전 실제 크기 명시적 고정 (안정화)
-            captureArea.style.width = "800px";
-            captureArea.style.height = "600px";
+            // 브라우저 렌더링 기준 정확한 크기 획득
+            const rect = captureArea.getBoundingClientRect();
 
-            // 2. 이상한 실선 방지를 위해 그림자(box-shadow) 일시 제거
-            const originalBoxShadow = captureArea.style.boxShadow;
+            // 현재 스타일 백업
+            const originalStyle = {
+                position: captureArea.style.position,
+                top: captureArea.style.top,
+                left: captureArea.style.left,
+                zIndex: captureArea.style.zIndex,
+                boxShadow: captureArea.style.boxShadow,
+                transform: captureArea.style.transform
+            };
+
+            // 캡처용 임시 스타일 적용 (absolute + 화면 밖 이동 + 방해 요소 제거)
+            captureArea.style.position = 'absolute';
+            captureArea.style.top = '-9999px';
+            captureArea.style.left = '0';
+            captureArea.style.zIndex = '-1';
             captureArea.style.boxShadow = 'none';
+            captureArea.style.transform = 'none';
 
             setTimeout(() => {
-                // 3. 브라우저 렌더링 기준 정확한 크기 획득 (가장 확실한 방법)
-                const rect = captureArea.getBoundingClientRect();
-
                 html2canvas(captureArea, {
-                    scale: 3, 
-                    width: rect.width,    // 강제 800 대신 실제 렌더링된 너비 사용
-                    height: rect.height,  // 강제 600 대신 실제 렌더링된 높이 사용
-                    scrollX: 0,
-                    scrollY: 0,
-                    backgroundColor: null, 
+                    scale: window.devicePixelRatio || 2,
+                    width: rect.width,
+                    height: rect.height,
                     useCORS: true,
-                    allowTaint: false, 
-                    imageTimeout: 15000, 
-                    logging: false 
+                    backgroundColor: null
                 }).then(canvas => {
                     // 원상 복구
-                    captureArea.style.boxShadow = originalBoxShadow;
+                    Object.assign(captureArea.style, originalStyle);
 
                     const link = document.createElement('a');
                     link.download = nameValue + '_포스터.png';
@@ -565,16 +570,14 @@
                     btn.style.opacity = "1";
                     btn.style.pointerEvents = "auto";
                 }).catch(err => {
-                    // 오류 시에도 원상 복구
-                    captureArea.style.boxShadow = originalBoxShadow;
-                    
+                    Object.assign(captureArea.style, originalStyle);
                     console.error("캡처 오류:", err);
                     alert("이미지 저장 중 오류가 발생했습니다. 브라우저 콘솔을 확인해주세요.");
                     btn.innerText = "고화질 이미지 저장";
                     btn.style.opacity = "1";
                     btn.style.pointerEvents = "auto";
                 });
-            }, 150); 
+            }, 100); 
         });
     </script>
 </body>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARCH 캐치프레이즈 에디터</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+    <style>
+        /* --- 기본 테마 변수 --- */
+        :root {
+            --bg-page: #f4f6f9;       /* 페이지 배경 */
+            --bg-panel: #ffffff;      /* 에디터 배경 */
+            --border-light: #e2e8f0;  /* 옅은 테두리 */
+            --border-focus: #3b82f6;  /* 포커스 테두리 (파란색) */
+            --text-main: #0f172a;     /* 메인 텍스트 */
+            --text-sub: #64748b;      /* 보조 텍스트 */
+            --input-bg: #f8fafc;      /* 입력칸 배경 */
+        }
+
+        /* --- 프리뷰 제어 변수 --- */
+        #captureArea {
+            --fallback-bg: #d1d5db;
+            --gradient-base: #000000;
+            --badge-bg: #E91E63;
+            --badge-text: #ffffff;
+            --card-primary-text: #ffffff;
+            --threat-level-text: #E91E63;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+            flex-wrap: wrap;
+        }
+
+        /* ---------------------------------
+           1. 왼쪽: 미니멀 에디터 패널
+        --------------------------------- */
+        .editor-panel {
+            background-color: var(--bg-panel);
+            padding: 32px;
+            border-radius: 24px;
+            width: 400px;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+            box-sizing: border-box;
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .editor-header img {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+        }
+
+        .editor-header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--border-light);
+            margin: 24px 0;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 입력 그룹 */
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .input-group input[type="text"], 
+        .input-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border-light);
+            background-color: var(--input-bg);
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+        .input-group textarea {
+            resize: none;
+            line-height: 1.5;
+        }
+
+        .input-group input[type="text"]:focus, 
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* 파일 업로드 디자인 커스텀 */
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 10px;
+            background-color: var(--input-bg);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .file-upload-wrapper:hover {
+            background-color: #f1f5f9;
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-upload-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-sub);
+            pointer-events: none;
+        }
+
+        /* 색상 선택기 (Swatch 스타일) */
+        .color-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            transition: border-color 0.2s;
+        }
+
+        .color-item:hover {
+            border-color: #cbd5e1;
+        }
+
+        .color-item label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-sub);
+            cursor: pointer;
+            margin: 0;
+            flex: 1;
+        }
+
+        /* 기본 input color 디자인 숨기기 및 다듬기 */
+        .color-item input[type="color"] {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+
+        .color-item input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-item input[type="color"]::-webkit-color-swatch {
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 6px;
+        }
+
+        /* 다운로드 버튼 */
+        .download-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--text-main);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.1s, box-shadow 0.2s, background-color 0.2s;
+        }
+
+        .download-btn:hover {
+            background-color: #1e293b;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+        .download-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* ---------------------------------
+           2. 오른쪽: 결과물 캔버스
+        --------------------------------- */
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .phrase-container {
+            width: 800px;
+            height: 600px;
+            position: relative;
+            background-color: var(--fallback-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .character-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            display: none;
+        }
+
+        .text-overlay-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 55%;
+            background: linear-gradient(to bottom, transparent, var(--gradient-base));
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .text-content-container {
+            position: absolute;
+            bottom: 40px;
+            left: 50px;
+            right: 50px;
+            z-index: 3;
+            text-align: left;
+        }
+
+        .preview-text-shadow {
+            text-shadow: 1px 1px 6px rgba(0,0,0,0.5);
+        }
+
+        .class-badge {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            background-color: var(--badge-bg);
+            color: var(--badge-text);
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 800;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 4;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .hidden { display: none !important; }
+
+        .threat-level {
+            display: inline-block;
+            margin-bottom: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--threat-level-text);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: none; 
+            padding: 0;
+        }
+
+        .character-name {
+            font-size: 88px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            margin: 0 0 16px 0;
+            line-height: 1;
+            color: var(--card-primary-text);
+        }
+
+        .catchphrase {
+            font-size: 20px;
+            line-height: 1.6;
+            margin: 0;
+            color: var(--card-primary-text);
+            opacity: 0.95;
+            white-space: pre-wrap;
+            font-weight: 400;
+            word-break: keep-all;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="editor-panel">
+        <div class="editor-header">
+            <img src="descriptive_logo_image_here.png" alt="ARCH 로고">
+            <h1>ARCH 캐치프레이즈 에디터</h1>
+        </div>
+
+        <div class="section-title">✏️ 텍스트 입력</div>
+
+        <div class="input-group">
+            <label>배경 이미지</label>
+            <div class="file-upload-wrapper">
+                <span class="file-upload-text" id="fileNameText">클릭하여 이미지 업로드</span>
+                <input type="file" id="imgInput" accept="image/*">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>클래스 (CLASS)</label>
+            <input type="text" id="classInput" placeholder="예: S-CLASS ENTITY">
+        </div>
+
+        <div class="input-group">
+            <label>위협 등급 (THREAT LEVEL)</label>
+            <input type="text" id="threatInput" placeholder="예: CHAOTIC">
+        </div>
+
+        <div class="input-group">
+            <label>이름 (NAME)</label>
+            <input type="text" id="nameInput" placeholder="이름을 입력하세요">
+        </div>
+
+        <div class="input-group">
+            <label>캐치프레이즈</label>
+            <textarea id="phraseInput" rows="4" placeholder="캐치프레이즈를 입력하세요 (엔터로 줄바꿈)"></textarea>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-title">🎨 디자인 커스텀</div>
+        
+        <div class="color-grid">
+            <div class="color-item">
+                <input type="color" id="fallbackBgInput" value="#d1d5db">
+                <label for="fallbackBgInput">기본 배경색</label>
+            </div>
+            <div class="color-item">
+                <input type="color" id="gradientBaseInput" value="#000000">
+                <label for="gradientBaseInput">하단 음영</label>
+            </div>
+            <div class="color-item">
+                <input type="color" id="badgeBgInput" value="#E91E63">
+                <label for="badgeBgInput">뱃지 배경</label>
+            </div>
+            <div class="color-item">
+                <input type="color" id="badgeTextInput" value="#ffffff">
+                <label for="badgeTextInput">뱃지 텍스트</label>
+            </div>
+            <div class="color-item">
+                <input type="color" id="threatLevelInput" value="#E91E63">
+                <label for="threatLevelInput">위협 등급</label>
+            </div>
+            <div class="color-item">
+                <input type="color" id="cardPrimaryTextInput" value="#ffffff">
+                <label for="cardPrimaryTextInput">메인 텍스트</label>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <button class="download-btn" id="downloadBtn">이미지 저장하기</button>
+    </div>
+
+    <div class="preview-panel">
+        <div class="phrase-container" id="captureArea">
+            <img src="" alt="" class="character-image" id="previewImg">
+            <div class="text-overlay-bottom"></div>
+            <div class="class-badge hidden preview-text-shadow" id="previewClassBadge"></div>
+            
+            <div class="text-content-container">
+                <div class="threat-level hidden preview-text-shadow" id="previewThreatBox">[ THREAT LEVEL: <span id="previewThreat"></span> ]</div>
+                <h1 class="character-name preview-text-shadow" id="previewName"></h1>
+                <p class="catchphrase preview-text-shadow" id="previewPhrase"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 색상 실시간 동기화
+        function syncColor(inputId, cssVarName) {
+            const picker = document.getElementById(inputId);
+            picker.addEventListener('input', function(e) {
+                document.getElementById('captureArea').style.setProperty(cssVarName, e.target.value);
+            });
+            document.getElementById('captureArea').style.setProperty(cssVarName, picker.value);
+        }
+
+        syncColor('fallbackBgInput', '--fallback-bg');
+        syncColor('gradientBaseInput', '--gradient-base');
+        syncColor('badgeBgInput', '--badge-bg');
+        syncColor('badgeTextInput', '--badge-text');
+        syncColor('cardPrimaryTextInput', '--card-primary-text');
+        syncColor('threatLevelInput', '--threat-level-text');
+
+        // 파일 업로드 처리 및 파일명 표시
+        document.getElementById('imgInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fileNameText = document.getElementById('fileNameText');
+            
+            if (file) {
+                fileNameText.innerText = file.name; // 버튼 텍스트를 파일명으로 변경
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const imgEl = document.getElementById('previewImg');
+                    imgEl.src = event.target.result;
+                    imgEl.style.display = 'block'; 
+                }
+                reader.readAsDataURL(file);
+            } else {
+                fileNameText.innerText = "클릭하여 이미지 업로드";
+            }
+        });
+
+        // 텍스트 실시간 동기화
+        function syncText(inputId, previewId, wrapperId = null) {
+            document.getElementById(inputId).addEventListener('input', function(e) {
+                const value = e.target.value;
+                const previewEl = document.getElementById(previewId);
+                const wrapperEl = wrapperId ? document.getElementById(wrapperId) : previewEl;
+                
+                previewEl.innerText = value;
+
+                if (value.trim() === '') {
+                    wrapperEl.classList.add('hidden');
+                } else {
+                    wrapperEl.classList.remove('hidden');
+                }
+            });
+        }
+
+        syncText('classInput', 'previewClassBadge');
+        syncText('threatInput', 'previewThreat', 'previewThreatBox');
+        syncText('nameInput', 'previewName');
+        syncText('phraseInput', 'previewPhrase');
+
+        // 이미지 저장
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const captureArea = document.getElementById('captureArea');
+            const btn = document.getElementById('downloadBtn');
+            const nameValue = document.getElementById('nameInput').value || 'ARCH';
+            
+            const originalText = btn.innerText;
+            btn.innerText = "저장 중...";
+            btn.style.opacity = "0.7";
+            btn.style.pointerEvents = "none";
+
+            html2canvas(captureArea, {
+                scale: 3, 
+                backgroundColor: null,
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = nameValue + '_포스터.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                btn.innerText = originalText;
+                btn.style.opacity = "1";
+                btn.style.pointerEvents = "auto";
+            });
+        });
+    </script>
+</body>
+</html>

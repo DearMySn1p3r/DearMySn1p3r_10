@@ -330,8 +330,7 @@
         .threat-level {
             display: inline-block;
             margin-bottom: 14px;
-            font-size: 16px;
-            /* [수정 1] THREAT LEVEL 글씨 두께 더 두껍게 (900) */
+            font-size: 17px;
             font-weight: 900;
             color: var(--threat-level-text);
             text-transform: uppercase;
@@ -351,7 +350,6 @@
         }
 
         .catchphrase {
-            /* [수정 2] 캐치프레이즈 글씨 크기 더 작고(15px), 얇게(300) */
             font-size: 15px;
             line-height: 1.6;
             margin: 0;
@@ -475,7 +473,6 @@
             const fileNameText = document.getElementById('fileNameText');
             
             if (file) {
-                // 파일명을 UI에 표시
                 fileNameText.innerText = file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name;
                 
                 const reader = new FileReader();
@@ -522,7 +519,7 @@
         syncText('nameInput', 'previewName');
         syncText('phraseInput', 'previewPhrase');
 
-        // --- [수정 3] 이미지 눌림 & 이상한 실선 완전 방지 로직 ---
+        // --- 캡처 로직 최적화 (사용자 해결책 적용) ---
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const captureArea = document.getElementById('captureArea');
             const btn = document.getElementById('downloadBtn');
@@ -532,25 +529,22 @@
             btn.style.opacity = "0.7";
             btn.style.pointerEvents = "none";
 
-            // 1. 눌림 현상 방지를 위해 캡처 영역을 잠시 화면 최상단으로 강제 고정
-            // 2. 이상한 실선 방지를 위해 그림자(box-shadow) 일시 제거
-            const originalPosition = captureArea.style.position;
-            const originalTop = captureArea.style.top;
-            const originalLeft = captureArea.style.left;
-            const originalZIndex = captureArea.style.zIndex;
-            const originalBoxShadow = captureArea.style.boxShadow;
+            // 1. 캡처 전 실제 크기 명시적 고정 (안정화)
+            captureArea.style.width = "800px";
+            captureArea.style.height = "600px";
 
-            captureArea.style.position = 'fixed';
-            captureArea.style.top = '0';
-            captureArea.style.left = '0';
-            captureArea.style.zIndex = '-9999';
+            // 2. 이상한 실선 방지를 위해 그림자(box-shadow) 일시 제거
+            const originalBoxShadow = captureArea.style.boxShadow;
             captureArea.style.boxShadow = 'none';
 
             setTimeout(() => {
+                // 3. 브라우저 렌더링 기준 정확한 크기 획득 (가장 확실한 방법)
+                const rect = captureArea.getBoundingClientRect();
+
                 html2canvas(captureArea, {
                     scale: 3, 
-                    width: 800,       
-                    height: 600,      
+                    width: rect.width,    // 강제 800 대신 실제 렌더링된 너비 사용
+                    height: rect.height,  // 강제 600 대신 실제 렌더링된 높이 사용
                     scrollX: 0,
                     scrollY: 0,
                     backgroundColor: null, 
@@ -559,11 +553,7 @@
                     imageTimeout: 15000, 
                     logging: false 
                 }).then(canvas => {
-                    // 저장 성공 시 원래 스타일로 원상 복구
-                    captureArea.style.position = originalPosition;
-                    captureArea.style.top = originalTop;
-                    captureArea.style.left = originalLeft;
-                    captureArea.style.zIndex = originalZIndex;
+                    // 원상 복구
                     captureArea.style.boxShadow = originalBoxShadow;
 
                     const link = document.createElement('a');
@@ -575,13 +565,9 @@
                     btn.style.opacity = "1";
                     btn.style.pointerEvents = "auto";
                 }).catch(err => {
-                    // 오류 시 원래 스타일로 원상 복구
-                    captureArea.style.position = originalPosition;
-                    captureArea.style.top = originalTop;
-                    captureArea.style.left = originalLeft;
-                    captureArea.style.zIndex = originalZIndex;
+                    // 오류 시에도 원상 복구
                     captureArea.style.boxShadow = originalBoxShadow;
-
+                    
                     console.error("캡처 오류:", err);
                     alert("이미지 저장 중 오류가 발생했습니다. 브라우저 콘솔을 확인해주세요.");
                     btn.innerText = "고화질 이미지 저장";

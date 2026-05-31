@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCH 캐치프레이즈 에디터 (Canvas Native)</title>
+    <title>ARCH 캐치프레이즈 에디터</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     <style>
         :root {
@@ -101,7 +101,8 @@
         }
 
         .input-group input[type="text"], 
-        .input-group textarea {
+        .input-group textarea,
+        .input-group select {
             width: 100%;
             padding: 12px 14px;
             border: 1px solid var(--border-light);
@@ -120,7 +121,8 @@
         }
 
         .input-group input[type="text"]:focus, 
-        .input-group textarea:focus {
+        .input-group textarea:focus,
+        .input-group select:focus {
             outline: none;
             border-color: var(--border-focus);
             background-color: #fff;
@@ -142,6 +144,20 @@
             font-weight: 700;
             color: var(--text-sub);
             white-space: nowrap;
+        }
+
+        .level-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .level-input-wrapper select {
+            width: 120px;
+            cursor: pointer;
+        }
+
+        .level-input-wrapper input {
+            flex: 1;
         }
 
         .file-upload-wrapper {
@@ -255,7 +271,6 @@
             align-items: center;
         }
 
-        /* 이제 이 부분은 "순수하게 미리보기용"으로만 쓰입니다. (다운로드는 Canvas로 진행) */
         .phrase-container {
             width: 800px;
             height: 600px;
@@ -388,9 +403,16 @@
             </div>
         </div>
 
+        <!-- 수정된 부분: 드롭다운 + 입력창 합치기 -->
         <div class="input-group">
-            <label>위협 등급 (THREAT LEVEL)</label>
-            <input type="text" id="threatInput" placeholder="예: CHAOTIC">
+            <label>등급 (LEVEL)</label>
+            <div class="level-input-wrapper">
+                <select id="levelTypeSelect">
+                    <option value="THREAT">위협 (THREAT)</option>
+                    <option value="SUPPORT">지원 (SUPPORT)</option>
+                </select>
+                <input type="text" id="threatInput" placeholder="예: CHAOTIC">
+            </div>
         </div>
 
         <div class="input-group">
@@ -414,7 +436,7 @@
             </div>
             <div class="color-item">
                 <input type="color" id="threatLevelInput" value="#E91E63">
-                <label for="threatLevelInput">위협 등급</label>
+                <label for="threatLevelInput">위협/지원 등급</label>
             </div>
         </div>
 
@@ -430,7 +452,8 @@
             <div class="class-badge hidden preview-text-shadow" id="previewClassBadge"></div>
             
             <div class="text-content-container">
-                <div class="threat-level hidden preview-text-shadow" id="previewThreatBox">[ THREAT LEVEL: <span id="previewThreat"></span> ]</div>
+                <!-- 수정된 부분: THREAT LEVEL 글자 자체도 바뀔 수 있도록 처리 -->
+                <div class="threat-level hidden preview-text-shadow" id="previewThreatBox">[ <span id="previewLevelType">THREAT</span> LEVEL: <span id="previewThreat"></span> ]</div>
                 <h1 class="character-name preview-text-shadow" id="previewName"></h1>
                 <p class="catchphrase preview-text-shadow" id="previewPhrase"></p>
             </div>
@@ -459,7 +482,7 @@
         syncColor('threatLevelInput', '--threat-level-text');
 
         // --- 2. 텍스트 및 이미지 동기화 (미리보기용) ---
-        let uploadedImage = new Image(); // Canvas 렌더링용 원본 이미지 저장 객체
+        let uploadedImage = new Image(); 
 
         document.getElementById('imgInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -470,11 +493,9 @@
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const src = event.target.result;
-                    // 미리보기 DOM 업데이트
                     const imgEl = document.getElementById('previewImg');
                     imgEl.src = src;
                     imgEl.style.display = 'block'; 
-                    // Canvas용 이미지 객체 로드
                     uploadedImage.src = src;
                 }
                 reader.readAsDataURL(file);
@@ -493,6 +514,11 @@
                 badgeEl.innerText = value + '-CLASS ENTITY';
                 badgeEl.classList.remove('hidden');
             }
+        });
+
+        // 추가된 부분: THREAT / SUPPORT 변경 시 텍스트 업데이트
+        document.getElementById('levelTypeSelect').addEventListener('change', function(e) {
+            document.getElementById('previewLevelType').innerText = e.target.value;
         });
 
         function syncText(inputId, previewId, wrapperId = null) {
@@ -514,7 +540,7 @@
         syncText('nameInput', 'previewName');
         syncText('phraseInput', 'previewPhrase');
 
-        // --- 🔥 3. Native Canvas 렌더링 (둥근 모서리 적용 완벽 버전) ---
+        // --- 🔥 3. Native Canvas 렌더링 ---
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const btn = document.getElementById('downloadBtn');
             const nameValue = document.getElementById('nameInput').value || '캐치프레이즈';
@@ -523,53 +549,48 @@
             btn.style.opacity = "0.7";
             btn.style.pointerEvents = "none";
 
-            // 브라우저 렌더링 차단 방지를 위해 setTimeout 사용
             setTimeout(() => {
-                // 1. 고해상도 캔버스 생성 (800x600 고정)
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 canvas.width = 800;
                 canvas.height = 600;
 
-                // 투명한 배경 초깃값
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // 🔥 [여기서 마법 시작] 도화지 자체를 둥글게 오려내기 (Clipping)
                 ctx.beginPath();
-                ctx.roundRect(0, 0, canvas.width, canvas.height, 20); // CSS의 border-radius: 20px
-                ctx.clip(); // 이후에 그려지는 모든 것은 이 둥근 모서리 밖으로 나갈 수 없음!
+                ctx.roundRect(0, 0, canvas.width, canvas.height, 20);
+                ctx.clip(); 
 
-                // 데이터 가져오기 (삭제된 입력창은 고정값으로 대체)
-                const fallbackBg = '#d1d5db'; // 고정
+                const fallbackBg = '#d1d5db'; 
                 const badgeBg = document.getElementById('badgeBgInput').value;
-                const badgeTextCol = '#ffffff'; // 고정
-                const primaryTextCol = '#ffffff'; // 고정
+                const badgeTextCol = '#ffffff'; 
+                const primaryTextCol = '#ffffff'; 
                 const threatCol = document.getElementById('threatLevelInput').value;
 
                 const classVal = document.getElementById('classInput').value.trim().toUpperCase();
                 const badgeStr = classVal ? classVal + '-CLASS ENTITY' : '';
+                
+                // 추가된 부분: 캔버스에도 드롭다운 선택값 연동
+                const levelTypeVal = document.getElementById('levelTypeSelect').value;
                 const threatVal = document.getElementById('threatInput').value.toUpperCase();
+                
                 const nameVal = document.getElementById('nameInput').value.toUpperCase();
                 const phraseVal = document.getElementById('phraseInput').value;
 
-                // 2. 배경 (단색)
                 ctx.fillStyle = fallbackBg;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // 3. 이미지 (Center Top 크롭)
                 if (uploadedImage.src && uploadedImage.src !== window.location.href) {
                     const imgRatio = uploadedImage.width / uploadedImage.height;
                     const canvasRatio = canvas.width / canvas.height;
                     let renderW, renderH, renderX, renderY;
 
                     if (imgRatio > canvasRatio) {
-                        // 이미지가 캔버스보다 가로로 김 (좌우 크롭)
                         renderH = canvas.height;
                         renderW = uploadedImage.width * (canvas.height / uploadedImage.height);
                         renderX = (canvas.width - renderW) / 2; 
                         renderY = 0; 
                     } else {
-                        // 이미지가 캔버스보다 세로로 김 (하단 크롭)
                         renderW = canvas.width;
                         renderH = uploadedImage.height * (canvas.width / uploadedImage.width);
                         renderX = 0; 
@@ -578,7 +599,6 @@
                     ctx.drawImage(uploadedImage, renderX, renderY, renderW, renderH);
                 }
 
-                // 4. 그라데이션 오버레이 (버그 없는 순수 Canvas 그라데이션)
                 const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
                 gradient.addColorStop(0, 'rgba(0,0,0,0)');
                 gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
@@ -586,16 +606,13 @@
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // --- 텍스트 렌더링 설정 ---
                 ctx.shadowColor = 'rgba(0,0,0,0.6)';
                 ctx.shadowBlur = 6;
                 ctx.shadowOffsetX = 1;
                 ctx.shadowOffsetY = 1;
 
-                // 4. 하단부터 위로 텍스트 그리기 (Bottom-up Layout)
-                let currentY = canvas.height - 40; // bottom: 40px
+                let currentY = canvas.height - 40; 
 
-                // 4-1. 캐치프레이즈
                 if (phraseVal) {
                     ctx.fillStyle = primaryTextCol;
                     ctx.font = '300 17px Pretendard, sans-serif';
@@ -612,7 +629,6 @@
                     currentY -= 10; 
                 }
 
-                // 4-2. 이름 (NAME)
                 if (nameVal) {
                     ctx.fillStyle = primaryTextCol;
                     ctx.font = '900 88px Pretendard, sans-serif';
@@ -624,17 +640,16 @@
                     currentY -= 6;  
                 }
 
-                // 4-3. 위협 등급 (THREAT LEVEL)
                 if (threatVal) {
                     ctx.fillStyle = threatCol;
                     ctx.font = '900 17px Pretendard, sans-serif';
                     ctx.textBaseline = 'bottom';
                     ctx.letterSpacing = "2px";
-                    ctx.fillText(`[ THREAT LEVEL: ${threatVal} ]`, 50, currentY);
+                    // 수정된 부분: 선택된 타입에 맞게 출력되도록 변경
+                    ctx.fillText(`[ ${levelTypeVal} LEVEL: ${threatVal} ]`, 50, currentY);
                     ctx.letterSpacing = "0px";
                 }
 
-                // 5. 우측 상단 CLASS 뱃지 그리기
                 if (badgeStr) {
                     ctx.font = '800 14px Pretendard, sans-serif';
                     ctx.letterSpacing = "1px";
@@ -643,22 +658,19 @@
                     const paddingY = 10;
                     const badgeW = textWidth + (paddingX * 2);
                     const badgeH = 14 + (paddingY * 2);
-                    const badgeX = canvas.width - 40 - badgeW; // right: 40px
-                    const badgeY = 40; // top: 40px
+                    const badgeX = canvas.width - 40 - badgeW; 
+                    const badgeY = 40; 
 
-                    // 뱃지 배경 (그림자 강하게)
                     ctx.shadowColor = 'rgba(0,0,0,0.15)';
                     ctx.shadowBlur = 12;
                     ctx.shadowOffsetY = 4;
                     ctx.fillStyle = badgeBg;
                     
-                    // 둥근 사각형 그리기
                     ctx.beginPath();
                     ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 8);
                     ctx.fill();
 
-                    // 뱃지 텍스트
-                    ctx.shadowColor = 'rgba(0,0,0,0.6)'; // 텍스트 섀도우 복구
+                    ctx.shadowColor = 'rgba(0,0,0,0.6)'; 
                     ctx.shadowBlur = 6;
                     ctx.shadowOffsetX = 1;
                     ctx.shadowOffsetY = 1;
@@ -668,18 +680,15 @@
                     ctx.letterSpacing = "0px";
                 }
 
-                // 6. 맨 아래 두꺼운 선 그리기 (그림자 없음)
                 ctx.shadowColor = 'transparent';
                 ctx.fillStyle = badgeBg; 
                 ctx.fillRect(0, canvas.height - 7, canvas.width, 7);
 
-                // 7. 이미지 파일로 변환 및 다운로드
                 const link = document.createElement('a');
                 link.download = nameValue + '_포스터.png';
-                link.href = canvas.toDataURL('image/png'); // 투명도 유지를 위해 반드시 png
+                link.href = canvas.toDataURL('image/png'); 
                 link.click();
 
-                // 버튼 원상복구
                 btn.innerText = "고화질 이미지 저장";
                 btn.style.opacity = "1";
                 btn.style.pointerEvents = "auto";

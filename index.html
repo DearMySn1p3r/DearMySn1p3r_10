@@ -7,7 +7,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     <style>
         :root {
-            --bg-page: #f4f6f9;       
+            --bg-page: #f4f6f9;        
             --bg-panel: #ffffff;      
             --border-light: #e2e8f0;  
             --border-focus: #3b82f6;  
@@ -372,8 +372,8 @@
             color: var(--card-primary-text);
             opacity: 0.95;
             white-space: pre-wrap;
-            font-weight: 300;
             word-break: keep-all;
+            overflow-wrap: break-word; /* 추가: 아주 긴 단어나 영문/숫자가 영역을 벗어나지 않도록 방지 */
         }
     </style>
 </head>
@@ -403,7 +403,6 @@
             </div>
         </div>
 
-        <!-- 수정된 부분: 드롭다운 + 입력창 합치기 -->
         <div class="input-group">
             <label>등급 (LEVEL)</label>
             <div class="level-input-wrapper">
@@ -452,7 +451,6 @@
             <div class="class-badge hidden preview-text-shadow" id="previewClassBadge"></div>
             
             <div class="text-content-container">
-                <!-- 수정된 부분: THREAT LEVEL 글자 자체도 바뀔 수 있도록 처리 -->
                 <div class="threat-level hidden preview-text-shadow" id="previewThreatBox">[ <span id="previewLevelType">THREAT</span> LEVEL: <span id="previewThreat"></span> ]</div>
                 <h1 class="character-name preview-text-shadow" id="previewName"></h1>
                 <p class="catchphrase preview-text-shadow" id="previewPhrase"></p>
@@ -516,7 +514,6 @@
             }
         });
 
-        // 추가된 부분: THREAT / SUPPORT 변경 시 텍스트 업데이트
         document.getElementById('levelTypeSelect').addEventListener('change', function(e) {
             document.getElementById('previewLevelType').innerText = e.target.value;
         });
@@ -570,7 +567,6 @@
                 const classVal = document.getElementById('classInput').value.trim().toUpperCase();
                 const badgeStr = classVal ? classVal + '-CLASS ENTITY' : '';
                 
-                // 추가된 부분: 캔버스에도 드롭다운 선택값 연동
                 const levelTypeVal = document.getElementById('levelTypeSelect').value;
                 const threatVal = document.getElementById('threatInput').value.toUpperCase();
                 
@@ -619,12 +615,39 @@
                     ctx.textBaseline = 'bottom';
                     ctx.globalAlpha = 0.95; 
                     
-                    const lines = phraseVal.split('\n').reverse(); 
+                    // --- 추가된 부분: 캔버스 텍스트 길이 측정 및 자동 줄바꿈 로직 ---
+                    const maxTextWidth = canvas.width - 100; // 좌우 50px씩 여백 (800 - 100 = 700)
+                    const paragraphs = phraseVal.split('\n'); // 사용자가 명시적으로 입력한 줄바꿈(\n) 먼저 분리
+                    let autoWrappedLines = [];
+
+                    paragraphs.forEach(paragraph => {
+                        let line = '';
+                        let words = paragraph.split(' '); // 띄어쓰기 기준으로 단어 분리
+                        
+                        for (let n = 0; n < words.length; n++) {
+                            let testLine = line + words[n] + ' ';
+                            let metrics = ctx.measureText(testLine);
+                            
+                            // 텍스트 너비가 최대 너비를 초과하면 줄바꿈 처리
+                            if (metrics.width > maxTextWidth && n > 0) {
+                                autoWrappedLines.push(line.trim());
+                                line = words[n] + ' ';
+                            } else {
+                                line = testLine;
+                            }
+                        }
+                        autoWrappedLines.push(line.trim());
+                    });
+
+                    // 아래에서 위로 그려지기 때문에 배열을 뒤집습니다.
+                    autoWrappedLines = autoWrappedLines.reverse(); 
+                    
                     const lineHeight = 17 * 1.6; 
-                    lines.forEach(line => {
+                    autoWrappedLines.forEach(line => {
                         ctx.fillText(line, 50, currentY);
                         currentY -= lineHeight;
                     });
+                    
                     ctx.globalAlpha = 1.0;
                     currentY -= 10; 
                 }
@@ -645,7 +668,6 @@
                     ctx.font = '900 17px Pretendard, sans-serif';
                     ctx.textBaseline = 'bottom';
                     ctx.letterSpacing = "2px";
-                    // 수정된 부분: 선택된 타입에 맞게 출력되도록 변경
                     ctx.fillText(`[ ${levelTypeVal} LEVEL: ${threatVal} ]`, 50, currentY);
                     ctx.letterSpacing = "0px";
                 }

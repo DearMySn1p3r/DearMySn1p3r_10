@@ -113,11 +113,6 @@ input[type=range]::-moz-range-thumb{width:9px;height:9px;border-radius:50%;backg
 .stage-h{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;gap:12px}
 .stage-h h2{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-top:8px}
 .frame{position:relative;padding:22px;border:1px solid var(--hl);border-radius:20px;background:#fff}
-.frame .c{position:absolute;width:10px;height:10px;border-color:var(--ink);border-style:solid;border-width:0}
-.frame .c.tl{top:-1px;left:-1px;border-top-width:1px;border-left-width:1px;border-top-left-radius:20px;width:20px;height:20px}
-.frame .c.tr{top:-1px;right:-1px;border-top-width:1px;border-right-width:1px;border-top-right-radius:20px;width:20px;height:20px}
-.frame .c.bl{bottom:-1px;left:-1px;border-bottom-width:1px;border-left-width:1px;border-bottom-left-radius:20px;width:20px;height:20px}
-.frame .c.br{bottom:-1px;right:-1px;border-bottom-width:1px;border-right-width:1px;border-bottom-right-radius:20px;width:20px;height:20px}
 #cv{display:block;width:100%;max-width:800px;aspect-ratio:4/3;margin:0 auto;border-radius:2.5%/3.333%;transition:border-radius .4s var(--ease);box-shadow:0 24px 60px rgba(0,0,0,.12);touch-action:none;cursor:grab;background:#e4e4e4}
 #cv.drag{cursor:grabbing}
 #cv.empty{cursor:default;touch-action:auto}
@@ -248,7 +243,6 @@ footer{padding:18px 28px 26px;display:flex;justify-content:space-between;max-wid
       <span class="lbl" id="st">Awaiting Image</span>
     </div>
     <div class="frame">
-      <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
       <canvas id="cv" width="800" height="600" class="empty"></canvas>
       <div id="scan"></div>
     </div>

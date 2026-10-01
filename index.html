@@ -1,724 +1,438 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCH 캐치프레이즈 에디터</title>
-    <link rel="icon" type="image/png" href="「ARCH」 Symbol Logo Black Ver.png">
-    <link rel="apple-touch-icon" href="「ARCH」 Symbol Logo Black Ver.png">
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
-    <style>
-        :root {
-            --bg-page: #f4f6f9;        
-            --bg-panel: #ffffff;      
-            --border-light: #e2e8f0;  
-            --border-focus: #3b82f6;  
-            --text-main: #0f172a;     
-            --text-sub: #64748b;      
-            --input-bg: #f8fafc;      
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ARCH Catchphrase Editor</title>
+<link rel="icon" type="image/png" href="「ARCH」 Symbol Logo Black Ver.png">
+<link rel="apple-touch-icon" href="「ARCH」 Symbol Logo Black Ver.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/variable/pretendardvariable.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f6f6f5;--panel:#fff;--ink:#0b0b0b;--t2:#555;--t3:#8c8c8c;--t4:#bdbdbd;
+  --hl:#ececec;--hl2:#dcdcdc;--sans:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;--ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;display:flex;flex-direction:column;
+  background-image:radial-gradient(circle,rgba(0,0,0,.07) 1px,transparent 1.2px);background-size:22px 22px;background-position:-11px -11px}
+button,input,select,textarea{font:inherit;color:inherit;background:none;border:0;outline:0}
+button{cursor:pointer}
+.lbl{font:500 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--t3)}
 
-        #captureArea {
-            --fallback-bg: #d1d5db;
-            --badge-bg: #E91E63;        
-            --badge-text: #ffffff;      
-            --card-primary-text: #ffffff; 
-            --threat-level-text: #E91E63; 
-            --border-color: #E91E63;    
-        }
+/* header */
+header{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(255,255,255,.82);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--hl);position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:22px;height:22px;object-fit:contain}
+.brand .wm{font:700 14px/1 var(--sans);letter-spacing:.42em;margin-right:-.42em}
+.brand .sep{width:1px;height:14px;background:var(--hl2)}
+.hd-r{display:flex;align-items:center;gap:18px}
+.dot{display:inline-flex;align-items:center;gap:7px}
+.dot::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--ink);animation:blink 1.6s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+#clock{font:500 11px var(--mono);letter-spacing:.08em;color:var(--ink)}
 
-        body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0;
-            padding: 40px 20px;
-            background-color: var(--bg-page);
-            color: var(--text-main);
-            display: flex;
-            gap: 40px;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            box-sizing: border-box;
-            flex-wrap: wrap;
-        }
+/* layout */
+main{flex:1;display:grid;grid-template-columns:380px minmax(0,1fr);grid-template-areas:'panel stage' 'panel prompt';grid-template-rows:auto 1fr;gap:28px;padding:28px;max-width:1360px;width:100%;margin:0 auto;align-items:start}
+.panel{grid-area:panel;background:var(--panel);border:1px solid var(--hl);border-radius:18px;padding:26px 24px 24px;
+  animation:rise .9s var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.sec{padding:18px 0;border-top:1px solid var(--hl)}
+.sec:first-of-type{border-top:0;padding-top:0}
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-h .lbl b{color:var(--ink);font-weight:500;margin-right:8px}
+.tl{font:500 10px var(--mono);letter-spacing:.14em;color:var(--t3);transition:color .2s}
+.tl:hover{color:var(--ink)}
+.fld{margin-bottom:12px}.fld:last-child{margin-bottom:0}
+.fld>label{display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:6px}
+.inp{width:100%;height:40px;padding:0 12px;border:1px solid var(--hl2);border-radius:9px;font-size:14px;background:#fff;transition:border-color .2s,box-shadow .2s}
+.inp::placeholder,textarea::placeholder{color:var(--t4)}
+.inp:focus,textarea:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(0,0,0,.05)}
+textarea{width:100%;padding:11px 12px;border:1px solid var(--hl2);border-radius:9px;font-size:14px;line-height:1.6;resize:none;transition:border-color .2s,box-shadow .2s}
+.suf{display:flex;align-items:center;gap:10px}
+.suf .inp{flex:1;text-transform:uppercase}
+.suf span{font:500 11px var(--mono);letter-spacing:.1em;color:var(--t3);white-space:nowrap}
+.cnt{display:flex;justify-content:flex-end;margin-top:6px}
 
-        .editor-panel {
-            background-color: var(--bg-panel);
-            padding: 32px;
-            border-radius: 24px;
-            width: 400px;
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.04);
-            box-sizing: border-box;
-        }
+/* segmented */
+.seg{position:relative;display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--hl2);border-radius:9px;padding:3px;height:40px;flex:none;width:150px}
+.seg button{position:relative;z-index:1;font:500 10.5px var(--mono);letter-spacing:.12em;color:var(--t3);transition:color .3s}
+.seg button.on{color:#fff}
+.seg i{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:6px;background:var(--ink);transition:transform .45s var(--ease)}
+.seg.r i{transform:translateX(100%)}
+.row{display:flex;gap:8px}
 
-        .editor-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
+/* drop */
+.drop{position:relative;display:flex;align-items:center;gap:12px;padding:12px;border:1px dashed var(--hl2);border-radius:10px;cursor:pointer;transition:border-color .2s,background .2s}
+.drop:hover,.drop.over{border-color:var(--ink);background:#fafafa}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop .ic{width:36px;height:36px;border-radius:8px;background:#f2f2f2;display:grid;place-items:center;flex:none;overflow:hidden}
+.drop .ic img{width:100%;height:100%;object-fit:cover}
+.drop .ic svg{width:16px;height:16px}
+.drop .tx{min-width:0}
+.drop .tx b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drop .tx span{font-size:11.5px;color:var(--t3)}
+.zoom{display:flex;align-items:center;gap:12px;margin-top:12px}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:18px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--hl2)}
+input[type=range]::-moz-range-track{height:1px;background:var(--hl2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--ink);margin-top:-6px;border:3px solid #fff;box-shadow:0 0 0 1px var(--ink)}
+input[type=range]::-moz-range-thumb{width:9px;height:9px;border-radius:50%;background:var(--ink);border:3px solid #fff;box-shadow:0 0 0 1px var(--ink)}
+.zoom output{font:500 10.5px var(--mono);color:var(--t2);width:38px;text-align:right}
 
-        .editor-header img {
-            width: 36px;
-            height: 36px;
-            object-fit: contain;
-        }
+/* colors */
+.colors{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cl{display:flex;align-items:center;gap:10px;height:42px;padding:0 10px;border:1px solid var(--hl2);border-radius:9px;cursor:pointer;transition:border-color .2s}
+.cl:hover{border-color:var(--ink)}
+.cl input{width:22px;height:22px;border-radius:6px;overflow:hidden;cursor:pointer;-webkit-appearance:none;appearance:none;padding:0;border:0}
+.cl input::-webkit-color-swatch-wrapper{padding:0}
+.cl input::-webkit-color-swatch{border:1px solid rgba(0,0,0,.1);border-radius:6px}
+.cl input::-moz-color-swatch{border:1px solid rgba(0,0,0,.1);border-radius:6px}
+.cl span{font-size:12px;color:var(--t2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl code{font:500 10px var(--mono);color:var(--t3);text-transform:uppercase}
+.sw{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
+.sw button{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--hl2);transition:box-shadow .2s,transform .2s}
+.sw button:hover{transform:scale(1.1)}
+.sw button.on{box-shadow:0 0 0 1.5px var(--ink)}
 
-        .editor-header h1 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
+/* buttons */
+.save{position:relative;width:100%;height:50px;margin-top:20px;border-radius:11px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  font-size:14px;font-weight:600;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.save:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.14)}
+.save .lbl{color:rgba(255,255,255,.5)}
+.save::after{content:'';position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transform:skewX(-20deg);transition:left .7s var(--ease)}
+.save:hover::after{left:120%}
+.save.busy{pointer-events:none;opacity:.6}
 
-        .divider {
-            height: 1px;
-            background-color: var(--border-light);
-            margin: 24px 0;
-        }
+/* preview */
+.stage{grid-area:stage;animation:rise .9s var(--ease) .08s both;min-width:0}
+.stage-h{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;gap:12px}
+.stage-h h2{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-top:8px}
+.frame{position:relative;padding:22px;border:1px solid var(--hl);border-radius:20px;background:#fff}
+.frame .c{position:absolute;width:10px;height:10px;border-color:var(--ink);border-style:solid;border-width:0}
+.frame .c.tl{top:-1px;left:-1px;border-top-width:1px;border-left-width:1px;border-top-left-radius:20px;width:20px;height:20px}
+.frame .c.tr{top:-1px;right:-1px;border-top-width:1px;border-right-width:1px;border-top-right-radius:20px;width:20px;height:20px}
+.frame .c.bl{bottom:-1px;left:-1px;border-bottom-width:1px;border-left-width:1px;border-bottom-left-radius:20px;width:20px;height:20px}
+.frame .c.br{bottom:-1px;right:-1px;border-bottom-width:1px;border-right-width:1px;border-bottom-right-radius:20px;width:20px;height:20px}
+#cv{display:block;width:100%;max-width:800px;aspect-ratio:4/3;margin:0 auto;border-radius:2.5%/3.333%;transition:border-radius .4s var(--ease);box-shadow:0 24px 60px rgba(0,0,0,.12);touch-action:none;cursor:grab;background:#e4e4e4}
+#cv.drag{cursor:grabbing}
+#cv.empty{cursor:default;touch-action:auto}
+#cv.sq{border-radius:0}
+.shape{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12.5px;color:var(--t2)}
+.shape .seg{width:150px;height:34px}
+.meta{display:flex;justify-content:space-between;margin-top:14px;padding:0 2px;gap:12px}
+.meta span{white-space:nowrap}
+#hint{font:400 11.5px var(--sans);letter-spacing:0;text-transform:none}
+#scan{position:absolute;left:22px;right:22px;top:22px;height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.5),transparent);opacity:0;pointer-events:none}
+#scan.go{animation:scan 1.1s var(--ease)}
+@keyframes scan{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(var(--h,560px))}}
 
-        .section-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--text-sub);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+/* prompt */
+.prompt{grid-area:prompt;background:var(--panel);border:1px solid var(--hl);border-radius:18px;padding:22px 24px;animation:rise .9s var(--ease) .16s both;align-self:start}
+.prompt-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+.prompt-h .lbl b{color:var(--ink);font-weight:500;margin-right:8px}
+.prompt>p{font-size:12.5px;color:var(--t3);margin-bottom:14px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pb{position:relative;border:1px solid var(--hl2);border-radius:11px;padding:14px 14px 12px;cursor:pointer;transition:border-color .2s,background .2s;text-align:left;display:flex;flex-direction:column;gap:10px}
+.pb:hover{border-color:var(--ink);background:#fcfcfc}
+.pb .top{display:flex;justify-content:space-between;align-items:center}
+.pb .top b{font-size:13px;font-weight:600}
+.pb code{font:400 11.5px/1.65 var(--mono);color:var(--t2);word-break:break-word}
+.pb .cp{font:500 9.5px var(--mono);letter-spacing:.14em;color:var(--t3);transition:color .2s}
+.pb:hover .cp{color:var(--ink)}
+.pb.done{border-color:var(--ink)}
+.pb.done .cp{color:var(--ink)}
+.cpall{font:500 10px var(--mono);letter-spacing:.14em;height:30px;padding:0 12px;border:1px solid var(--hl2);border-radius:8px;transition:all .2s;white-space:nowrap}
+.cpall:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+@media (max-width:640px){.pgrid{grid-template-columns:1fr}}
 
-        .input-group {
-            margin-bottom: 16px;
-        }
+/* toast */
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,16px);background:var(--ink);color:#fff;padding:11px 16px;border-radius:10px;
+  font:500 10.5px var(--mono);letter-spacing:.16em;display:flex;align-items:center;gap:9px;opacity:0;pointer-events:none;transition:all .45s var(--ease);z-index:30}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast img{width:13px;height:13px}
 
-        .input-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-main);
-        }
+footer{padding:18px 28px 26px;display:flex;justify-content:space-between;max-width:1360px;width:100%;margin:0 auto}
 
-        .input-group input[type="text"], 
-        .input-group textarea,
-        .input-group select {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid var(--border-light);
-            background-color: var(--input-bg);
-            border-radius: 10px;
-            box-sizing: border-box;
-            font-family: inherit;
-            font-size: 14px;
-            color: var(--text-main);
-            transition: all 0.2s ease;
-        }
+/* boot */
+#boot{position:fixed;inset:0;z-index:50;background:#fff;display:grid;place-items:center;transition:opacity .6s var(--ease),visibility .6s}
+#boot.off{opacity:0;visibility:hidden}
+#boot .b{display:flex;flex-direction:column;align-items:center;gap:16px}
+#boot img{width:38px;height:38px;animation:bl 1s var(--ease) both}
+#boot .ln{width:120px;height:1px;background:var(--hl);overflow:hidden}
+#boot .ln i{display:block;height:100%;background:var(--ink);animation:ld .8s var(--ease) .1s both}
+@keyframes bl{from{opacity:0;transform:scale(.85)}}
+@keyframes ld{from{transform:translateX(-100%)}}
 
-        .input-group textarea {
-            resize: none;
-            line-height: 1.5;
-        }
-
-        .input-group input[type="text"]:focus, 
-        .input-group textarea:focus,
-        .input-group select:focus {
-            outline: none;
-            border-color: var(--border-focus);
-            background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .class-input-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .class-input-wrapper input {
-            flex: 1;
-        }
-
-        .class-input-wrapper span {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-sub);
-            white-space: nowrap;
-        }
-
-        .level-input-wrapper {
-            display: flex;
-            gap: 10px;
-        }
-
-        .level-input-wrapper select {
-            width: 120px;
-            cursor: pointer;
-        }
-
-        .level-input-wrapper input {
-            flex: 1;
-        }
-
-        .file-upload-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px;
-            border: 1px dashed #cbd5e1;
-            border-radius: 10px;
-            background-color: var(--input-bg);
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .file-upload-wrapper:hover {
-            background-color: #f1f5f9;
-        }
-
-        .file-upload-wrapper input[type="file"] {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .file-upload-text {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-sub);
-            pointer-events: none;
-        }
-
-        .color-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .color-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 12px;
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-light);
-            border-radius: 10px;
-            transition: border-color 0.2s;
-        }
-
-        .color-item:hover {
-            border-color: #cbd5e1;
-        }
-
-        .color-item label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-sub);
-            cursor: pointer;
-            margin: 0;
-            flex: 1;
-        }
-
-        .color-item input[type="color"] {
-            -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            padding: 0;
-            background: none;
-        }
-
-        .color-item input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-
-        .color-item input[type="color"]::-webkit-color-swatch {
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 6px;
-        }
-
-        .download-btn {
-            width: 100%;
-            padding: 16px;
-            background-color: var(--text-main);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: transform 0.1s, box-shadow 0.2s, background-color 0.2s;
-        }
-
-        .download-btn:hover {
-            background-color: #1e293b;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateY(-1px);
-        }
-
-        /* ---------------------------------
-           2. 오른쪽: 결과물 미리보기 (웹용)
-        --------------------------------- */
-        .preview-panel {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .phrase-container {
-            width: 800px;
-            height: 600px;
-            flex: none; 
-            box-sizing: border-box; 
-            position: relative;
-            background-color: var(--fallback-bg); 
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
-            border-bottom: 7px solid var(--border-color);
-        }
-
-        .character-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center top; 
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            display: none; 
-        }
-
-        .text-overlay-bottom {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%; 
-            background: linear-gradient(
-                to bottom,
-                rgba(0,0,0,0) 0%,
-                rgba(0,0,0,0) 50%,
-                rgba(0,0,0,0.8) 100%
-            );
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        .text-content-container {
-            position: absolute;
-            bottom: 40px;
-            left: 50px;
-            right: 50px;
-            z-index: 3;
-            text-align: left;
-        }
-
-        .preview-text-shadow {
-            text-shadow: 1px 1px 6px rgba(0,0,0,0.5);
-        }
-
-        .class-badge {
-            position: absolute;
-            top: 40px;
-            right: 40px;
-            background-color: var(--badge-bg);
-            color: var(--badge-text);      
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 800;
-            border-radius: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            z-index: 4;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .hidden { display: none !important; }
-
-        .threat-level {
-            display: inline-block;
-            margin-bottom: 14px;
-            font-size: 17px;
-            font-weight: 900;
-            color: var(--threat-level-text);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            border: none; 
-            padding: 0;
-        }
-
-        .character-name {
-            font-size: 88px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: -2px;
-            margin: 0 0 16px 0;
-            line-height: 1;
-            color: var(--card-primary-text);
-        }
-
-        .catchphrase {
-            font-size: 17px;
-            line-height: 1.6;
-            margin: 0;
-            color: var(--card-primary-text);
-            opacity: 0.95;
-            white-space: pre-wrap;
-            word-break: keep-all;
-            overflow-wrap: break-word; /* 추가: 아주 긴 단어나 영문/숫자가 영역을 벗어나지 않도록 방지 */
-        }
-    </style>
+@media (max-width:980px){
+  main{grid-template-columns:1fr;grid-template-areas:'stage' 'panel' 'prompt';grid-template-rows:auto;padding:16px;gap:16px}
+  .prompt{padding:20px 18px}
+  .panel{position:static;order:2;padding:22px 18px 20px}
+  .stage{order:1;position:sticky;top:calc(54px + env(safe-area-inset-top));z-index:5;background:var(--bg);margin:-16px -16px 0;padding:12px 16px 10px;border-bottom:1px solid var(--hl)}
+  .stage-h{display:none}
+  .meta{margin-top:8px}
+  header{padding:0 16px;padding-top:env(safe-area-inset-top);height:calc(54px + env(safe-area-inset-top))}
+  .hd-r .lbl.dot,.brand .sep,.brand .ttl{display:none}
+  .frame{padding:10px;border-radius:16px}
+  #scan{left:10px;right:10px;top:10px}
+  .stage-h h2{font-size:19px}
+  .inp,textarea{font-size:16px}
+  footer{padding:6px 16px calc(22px + env(safe-area-inset-bottom))}
+  #toast{bottom:calc(22px + env(safe-area-inset-bottom))}
+}
+@media (max-width:420px){.meta .hide-s{display:none}.cl code{display:none}}
+</style>
 </head>
 <body>
+<div id="boot"><div class="b"><img src="「ARCH」 Symbol Logo Black Ver.png" alt=""><div class="ln"><i></i></div><span class="lbl">Initializing</span></div></div>
 
-    <div class="editor-panel">
-        <div class="editor-header">
-            <img src="「ARCH」 Symbol Logo Black Ver.png" alt="ARCH 로고" onerror="this.src='https://via.placeholder.com/36?text=Logo'">
-            <h1>ARCH 캐치프레이즈 에디터</h1>
-        </div>
+<header>
+  <div class="brand"><img src="「ARCH」 Symbol Logo Black Ver.png" alt="ARCH"><span class="wm">ARCH</span><span class="sep"></span><span class="lbl ttl">Catchphrase Editor</span></div>
+  <div class="hd-r"><span class="lbl dot">Harmony Division</span><span id="clock">00:00:00</span></div>
+</header>
 
-        <div class="section-title">✏️ 텍스트 입력</div>
-
-        <div class="input-group">
-            <label>배경 이미지 업로드</label>
-            <div class="file-upload-wrapper">
-                <span class="file-upload-text" id="fileNameText">파일 첨부</span>
-                <input type="file" id="imgInput" accept="image/*">
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>클래스 (CLASS)</label>
-            <div class="class-input-wrapper">
-                <input type="text" id="classInput" placeholder="예: S, A, B">
-                <span>-CLASS ENTITY</span>
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>등급 (LEVEL)</label>
-            <div class="level-input-wrapper">
-                <select id="levelTypeSelect">
-                    <option value="THREAT">THREAT</option>
-                    <option value="SUPPORT">SUPPORT</option>
-                </select>
-                <input type="text" id="threatInput" placeholder="예: CHAOTIC">
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>이름 (NAME)</label>
-            <input type="text" id="nameInput" placeholder="이름을 입력하세요">
-        </div>
-
-        <div class="input-group">
-            <label>캐치프레이즈</label>
-            <textarea id="phraseInput" rows="4" placeholder="캐치프레이즈를 입력하세요 (엔터로 줄바꿈)"></textarea>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="section-title">🎨 디자인 커스텀</div>
-        
-        <div class="color-grid">
-            <div class="color-item">
-                <input type="color" id="badgeBgInput" value="#E91E63">
-                <label for="badgeBgInput">뱃지 배경 / 선</label>
-            </div>
-            <div class="color-item">
-                <input type="color" id="threatLevelInput" value="#E91E63">
-                <label for="threatLevelInput">위협/지원 등급</label>
-            </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <button class="download-btn" id="downloadBtn">고화질 이미지 저장</button>
+<main>
+  <section class="panel">
+    <div class="sec">
+      <div class="sec-h"><span class="lbl"><b>01</b>Image</span><button class="tl" id="resetImg">RESET ↺</button></div>
+      <label class="drop" id="drop">
+        <span class="ic" id="thumb"><svg viewBox="0 0 16 16" fill="none" stroke="#111" stroke-width="1.1"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5.5" cy="6.5" r="1.3"/><path d="M2 12l4-3.5 3 2.5 2-1.5 3 2.5"/></svg></span>
+        <span class="tx"><b id="fname">이미지 업로드</b><span>클릭하거나 끌어다 놓기</span></span>
+        <input type="file" id="file" accept="image/*">
+      </label>
+      <div class="zoom"><span class="lbl">Zoom</span><input type="range" id="zoom" min="100" max="300" value="100"><output id="zv">100%</output></div>
     </div>
 
-    <div class="preview-panel">
-        <div class="phrase-container" id="captureArea">
-            <img src="" alt="" class="character-image" id="previewImg">
-            <div class="text-overlay-bottom"></div>
-            <div class="class-badge hidden preview-text-shadow" id="previewClassBadge"></div>
-            
-            <div class="text-content-container">
-                <div class="threat-level hidden preview-text-shadow" id="previewThreatBox">[ <span id="previewLevelType">THREAT</span> LEVEL: <span id="previewThreat"></span> ]</div>
-                <h1 class="character-name preview-text-shadow" id="previewName"></h1>
-                <p class="catchphrase preview-text-shadow" id="previewPhrase"></p>
-            </div>
-        </div>
+    <div class="sec">
+      <div class="sec-h"><span class="lbl"><b>02</b>Identity</span><button class="tl" id="clearAll">CLEAR ×</button></div>
+      <div class="fld"><label for="cls">클래스</label>
+        <div class="suf"><input class="inp" id="cls" maxlength="3" placeholder="클래스 입력"><span>-CLASS ENTITY</span></div></div>
+      <div class="fld"><label for="lvl">등급</label>
+        <div class="row"><div class="seg" id="seg"><button class="on" data-v="THREAT">THREAT</button><button data-v="SUPPORT">SUPPORT</button><i></i></div>
+        <input class="inp" id="lvl" placeholder="등급 입력" maxlength="24"></div></div>
+      <div class="fld"><label for="nm">이름</label><input class="inp" id="nm" placeholder="이름을 입력하세요" maxlength="24"></div>
     </div>
 
-    <script>
-        // --- 1. 색상 동기화 (미리보기용) ---
-        function syncColor(inputId, cssVarName) {
-            const picker = document.getElementById(inputId);
-            picker.addEventListener('input', function(e) {
-                document.getElementById('captureArea').style.setProperty(cssVarName, e.target.value);
-            });
-            document.getElementById('captureArea').style.setProperty(cssVarName, picker.value);
-        }
+    <div class="sec">
+      <div class="sec-h"><span class="lbl"><b>03</b>Catchphrase</span></div>
+      <textarea id="ph" rows="4" maxlength="240" placeholder="캐치프레이즈를 입력하세요 (엔터로 줄바꿈)"></textarea>
+      <div class="cnt"><span class="lbl" id="cnt">0 / 240</span></div>
+    </div>
 
-        const badgePicker = document.getElementById('badgeBgInput');
-        badgePicker.addEventListener('input', function(e) {
-            const color = e.target.value;
-            document.getElementById('captureArea').style.setProperty('--badge-bg', color);
-            document.getElementById('captureArea').style.setProperty('--border-color', color);
-        });
-        document.getElementById('captureArea').style.setProperty('--badge-bg', badgePicker.value);
-        document.getElementById('captureArea').style.setProperty('--border-color', badgePicker.value);
+    <div class="sec">
+      <div class="sec-h"><span class="lbl"><b>04</b>Color</span></div>
+      <div class="colors">
+        <label class="cl"><input type="color" id="cA" value="#111111"><span>뱃지 · 라인</span><code id="cAv">#111111</code></label>
+        <label class="cl"><input type="color" id="cB" value="#ffffff"><span>등급 텍스트</span><code id="cBv">#FFFFFF</code></label>
+      </div>
+      <div class="sw" id="sw"></div>
+      <div class="shape">이미지 모서리<div class="seg" id="segShape"><button class="on" data-v="round">ROUND</button><button data-v="square">SQUARE</button><i></i></div></div>
+    </div>
 
-        syncColor('threatLevelInput', '--threat-level-text');
+    <button class="save" id="save"><span>고화질 이미지 저장</span><span class="lbl">PNG · 1600×1200</span></button>
+  </section>
 
-        // --- 2. 텍스트 및 이미지 동기화 (미리보기용) ---
-        let uploadedImage = new Image(); 
+  <section class="prompt">
+    <div class="prompt-h"><span class="lbl"><b>05</b>Reference Prompt</span><button class="cpall" id="cpAll">COPY ALL</button></div>
+    <p>이미지 생성 AI용 참고 프롬프트예요. 누르면 복사돼요.</p>
+    <div class="pgrid" id="pgrid"></div>
+  </section>
 
-        document.getElementById('imgInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const fileNameText = document.getElementById('fileNameText');
-            
-            if (file) {
-                fileNameText.innerText = file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name;
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const src = event.target.result;
-                    const imgEl = document.getElementById('previewImg');
-                    imgEl.src = src;
-                    imgEl.style.display = 'block'; 
-                    uploadedImage.src = src;
-                }
-                reader.readAsDataURL(file);
-            } else {
-                fileNameText.innerText = "파일 첨부";
-            }
-        });
+  <section class="stage">
+    <div class="stage-h">
+      <div><span class="lbl">Harmony Division — Archive</span><h2>Catchphrase Preview</h2></div>
+      <span class="lbl" id="st">Awaiting Image</span>
+    </div>
+    <div class="frame">
+      <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+      <canvas id="cv" width="800" height="600" class="empty"></canvas>
+      <div id="scan"></div>
+    </div>
+    <div class="meta"><span class="lbl hide-s">800 × 600 · 4:3</span><span class="lbl" id="hint">이미지를 업로드하면 위치와 크기를 조정할 수 있어요</span></div>
+  </section>
+</main>
 
-        document.getElementById('classInput').addEventListener('input', function(e) {
-            const value = e.target.value.trim().toUpperCase(); 
-            const badgeEl = document.getElementById('previewClassBadge');
-            
-            if (value === '') {
-                badgeEl.classList.add('hidden');
-            } else {
-                badgeEl.innerText = value + '-CLASS ENTITY';
-                badgeEl.classList.remove('hidden');
-            }
-        });
+<footer><span class="lbl">ARCH Strategic Command</span><span class="lbl">Internal Use Only</span></footer>
+<div id="toast"><img src="「ARCH」 Symbol Logo White Ver.png" alt=""><span id="tt"></span></div>
 
-        document.getElementById('levelTypeSelect').addEventListener('change', function(e) {
-            document.getElementById('previewLevelType').innerText = e.target.value;
-        });
+<script>
+const $=id=>document.getElementById(id);
+const W=800,H=600;
+const PRESETS=['#111111','#e91e63','#ff4d4d','#ff8a1f','#f5c400','#22b573','#1e90ff','#6c5ce7'];
+const S={img:null,zoom:1,ox:0,oy:0,level:'THREAT',a:'#111111',b:'#ffffff',round:true};
+const cv=$('cv'),ctx=cv.getContext('2d');
 
-        function syncText(inputId, previewId, wrapperId = null) {
-            document.getElementById(inputId).addEventListener('input', function(e) {
-                const value = e.target.value;
-                const previewEl = document.getElementById(previewId);
-                const wrapperEl = wrapperId ? document.getElementById(wrapperId) : previewEl;
-                
-                previewEl.innerText = value;
-                if (value.trim() === '') {
-                    wrapperEl.classList.add('hidden');
-                } else {
-                    wrapperEl.classList.remove('hidden');
-                }
-            });
-        }
+/* ---------- render (shared by preview & export) ---------- */
+function wrap(c,text,max){
+  const out=[];
+  text.split('\n').forEach(p=>{
+    if(!p.trim()){out.push('');return;}
+    let line='';
+    p.split(' ').forEach(w=>{
+      const t=line?line+' '+w:w;
+      if(c.measureText(t).width<=max){line=t;return;}
+      if(line)out.push(line);
+      if(c.measureText(w).width<=max){line=w;return;}
+      line='';for(const ch of w){if(c.measureText(line+ch).width>max){out.push(line);line=ch;}else line+=ch;}
+    });
+    out.push(line);
+  });
+  return out;
+}
+function ls0(c,v){if('letterSpacing' in c)c.letterSpacing=v+'px';}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function imgRect(){
+  const im=S.img,s=Math.max(W/im.width,H/im.height)*S.zoom,w=im.width*s,h=im.height*s;
+  return{w,h,x:Math.min(0,Math.max(W-w,(W-w)/2+S.ox)),y:Math.min(0,Math.max(H-h,S.oy))};
+}
+function render(c,scale,preview=false){
+  c.setTransform(scale,0,0,scale,0,0);c.clearRect(0,0,W,H);
+  c.save();rr(c,0,0,W,H,S.round?20:0.01);c.clip();
+  /* background */
+  if(S.img){const r=imgRect();c.drawImage(S.img,r.x,r.y,r.w,r.h);}
+  else{
+    const g=c.createLinearGradient(0,0,W,H);g.addColorStop(0,'#ececec');g.addColorStop(1,'#d6d6d6');c.fillStyle=g;c.fillRect(0,0,W,H);
+    c.fillStyle='rgba(0,0,0,.06)';for(let x=20;x<W;x+=24)for(let y=20;y<H;y+=24)c.fillRect(x,y,1.2,1.2);
+    if(preview){c.fillStyle='rgba(0,0,0,.35)';c.textAlign='center';c.font='500 13px "JetBrains Mono",monospace';ls0(c,3);c.fillText('NO IMAGE SIGNAL',W/2,H/2-60);c.font='400 14px "Pretendard Variable",Pretendard,sans-serif';ls0(c,0);c.fillStyle='rgba(0,0,0,.3)';c.fillText('이미지를 업로드하거나 여기에 끌어다 놓으세요',W/2,H/2-34);c.textAlign='left';}
+  }
+  const gr=c.createLinearGradient(0,0,0,H);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.5,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.8)');
+  c.fillStyle=gr;c.fillRect(0,0,W,H);
 
-        syncText('threatInput', 'previewThreat', 'previewThreatBox');
-        syncText('nameInput', 'previewName');
-        syncText('phraseInput', 'previewPhrase');
+  const cls=$('cls').value.trim().toUpperCase(),lv=$('lvl').value.trim().toUpperCase(),nm=$('nm').value.trim().toUpperCase(),ph=$('ph').value.replace(/\s+$/,'');
+  const shadow=(a=.55,b=6)=>{c.shadowColor=`rgba(0,0,0,${a})`;c.shadowBlur=b*scale;c.shadowOffsetX=1*scale;c.shadowOffsetY=1*scale;};
+  const noShadow=()=>{c.shadowColor='transparent';c.shadowBlur=0;c.shadowOffsetX=c.shadowOffsetY=0;};
+  const ls=v=>{if('letterSpacing' in c)c.letterSpacing=v+'px';};
+  c.textBaseline='alphabetic';c.textAlign='left';
 
-        // --- 🔥 3. Native Canvas 렌더링 ---
-        document.getElementById('downloadBtn').addEventListener('click', function() {
-            const btn = document.getElementById('downloadBtn');
-            const nameValue = document.getElementById('nameInput').value || '캐치프레이즈';
-            
-            btn.innerText = "고화질 렌더링 중...";
-            btn.style.opacity = "0.7";
-            btn.style.pointerEvents = "none";
+  /* class badge */
+  if(cls){
+    c.font='800 14px "Pretendard Variable",Pretendard,sans-serif';ls(1);
+    const t=cls+'-CLASS ENTITY',tw=c.measureText(t).width,bw=tw+40,bh=34,bx=W-40-bw,by=38;
+    c.save();c.shadowColor='rgba(0,0,0,.18)';c.shadowBlur=12*scale;c.shadowOffsetY=4*scale;c.fillStyle=S.a;rr(c,bx,by,bw,bh,8);c.fill();c.restore();
+    c.fillStyle='#fff';c.textBaseline='middle';shadow(.3,3);c.fillText(t,bx+20,by+bh/2+1);noShadow();c.textBaseline='alphabetic';ls(0);
+  }
 
-            setTimeout(() => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 800;
-                canvas.height = 600;
+  /* bottom text stack */
+  let y=H-40-7;
+  if(ph){
+    c.font='400 17px "Pretendard Variable",Pretendard,sans-serif';
+    const lines=wrap(c,ph,W-100).slice(-8),lh=17*1.6;
+    c.fillStyle='rgba(255,255,255,.95)';shadow();
+    for(let i=lines.length-1;i>=0;i--){c.fillText(lines[i],50,y);y-=lh;}
+    noShadow();y-=6;
+  }
+  if(nm){
+    let fs=88;c.font=`900 ${fs}px "Pretendard Variable",Pretendard,sans-serif`;ls(-2);
+    while(c.measureText(nm).width>W-100&&fs>20){fs-=2;c.font=`900 ${fs}px "Pretendard Variable",Pretendard,sans-serif`;}
+    y-=4;c.fillStyle='#fff';shadow();c.fillText(nm,48,y);noShadow();ls(0);y-=fs*.82+18;
+  }
+  if(lv){
+    c.font='900 17px "Pretendard Variable",Pretendard,sans-serif';ls(2);
+    c.fillStyle=S.b;shadow(.5,6);c.fillText(`[ ${S.level} LEVEL: ${lv} ]`,50,y);noShadow();ls(0);
+  }
+  /* bottom line */
+  c.fillStyle=S.a;c.fillRect(0,H-7,W,7);
+  c.restore();
+}
+let raf=0;
+function draw(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
+  const dpr=Math.min(3,Math.max(1,window.devicePixelRatio||1)),k=Math.max(dpr,cv.clientWidth*dpr/W);
+  const s=Math.min(3,Math.max(1,k));
+  if(cv.width!==Math.round(W*s)){cv.width=Math.round(W*s);cv.height=Math.round(H*s);}
+  render(ctx,s,true);
+});}
 
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+/* ---------- image ---------- */
+function loadFile(f){
+  if(!f||!/^image\//.test(f.type)){toast('IMAGE FILES ONLY');return;}
+  const rd=new FileReader();
+  rd.onload=e=>{const im=new Image();im.onload=()=>{S.img=im;S.zoom=1;S.ox=0;S.oy=0;$('zoom').value=100;$('zv').textContent='100%';
+      $('fname').textContent=f.name;$('thumb').innerHTML=`<img src="${e.target.result}" alt="">`;
+      cv.classList.remove('empty');$('st').textContent='Image Loaded';$('hint').textContent='드래그로 위치 · 휠이나 슬라이더로 확대';scan();draw();toast('IMAGE LOADED');};im.src=e.target.result;};
+  rd.readAsDataURL(f);
+}
+$('file').addEventListener('change',e=>{loadFile(e.target.files[0]);e.target.value='';});
+const dz=$('drop');
+['dragenter','dragover'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add('over');}));
+['dragleave','drop'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove('over');}));
+dz.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
+['dragover','drop'].forEach(t=>window.addEventListener(t,e=>e.preventDefault()));
+cv.addEventListener('dragover',e=>e.preventDefault());
+cv.addEventListener('drop',e=>{e.preventDefault();loadFile(e.dataTransfer.files[0]);});
+$('zoom').addEventListener('input',e=>{S.zoom=e.target.value/100;$('zv').textContent=e.target.value+'%';draw();});
+$('resetImg').addEventListener('click',()=>{S.zoom=1;S.ox=0;S.oy=0;$('zoom').value=100;$('zv').textContent='100%';draw();});
 
-                ctx.beginPath();
-                ctx.roundRect(0, 0, canvas.width, canvas.height, 20);
-                ctx.clip(); 
+/* drag to reposition */
+let drag=null;
+cv.addEventListener('pointerdown',e=>{if(!S.img)return;const r=imgRect();drag={x:e.clientX,y:e.clientY,ox:r.x-(W-r.w)/2,oy:r.y,k:W/cv.clientWidth};cv.setPointerCapture(e.pointerId);cv.classList.add('drag');});
+cv.addEventListener('pointermove',e=>{if(!drag)return;S.ox=drag.ox+(e.clientX-drag.x)*drag.k;S.oy=drag.oy+(e.clientY-drag.y)*drag.k;
+  const r=imgRect();S.ox=r.x-(W-r.w)/2;S.oy=r.y;draw();});
+['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,()=>{drag=null;cv.classList.remove('drag');}));
+cv.addEventListener('wheel',e=>{if(!S.img)return;e.preventDefault();const z=Math.min(300,Math.max(100,+$('zoom').value-Math.sign(e.deltaY)*8));$('zoom').value=z;S.zoom=z/100;$('zv').textContent=z+'%';draw();},{passive:false});
 
-                const fallbackBg = '#d1d5db'; 
-                const badgeBg = document.getElementById('badgeBgInput').value;
-                const badgeTextCol = '#ffffff'; 
-                const primaryTextCol = '#ffffff'; 
-                const threatCol = document.getElementById('threatLevelInput').value;
+/* ---------- fields ---------- */
+['cls','lvl','nm','ph'].forEach(i=>$(i).addEventListener('input',()=>{if(i==='ph')$('cnt').textContent=`${$('ph').value.length} / 240`;draw();}));
+const seg=$('seg');
+seg.querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));seg.classList.toggle('r',i===1);S.level=b.dataset.v;draw();}));
+const sg2=$('segShape');
+sg2.querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{sg2.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));sg2.classList.toggle('r',i===1);S.round=i===0;cv.classList.toggle('sq',!S.round);draw();toast(S.round?'ROUND CORNERS':'SQUARE CORNERS');}));
+$('clearAll').addEventListener('click',()=>{['cls','lvl','nm','ph'].forEach(i=>$(i).value='');$('cnt').textContent='0 / 240';draw();toast('FIELDS CLEARED');});
 
-                const classVal = document.getElementById('classInput').value.trim().toUpperCase();
-                const badgeStr = classVal ? classVal + '-CLASS ENTITY' : '';
-                
-                const levelTypeVal = document.getElementById('levelTypeSelect').value;
-                const threatVal = document.getElementById('threatInput').value.toUpperCase();
-                
-                const nameVal = document.getElementById('nameInput').value.toUpperCase();
-                const phraseVal = document.getElementById('phraseInput').value;
+/* ---------- colors ---------- */
+function setColor(which,v){S[which]=v;$(which==='a'?'cA':'cB').value=v;$(which==='a'?'cAv':'cBv').textContent=v.toUpperCase();
+  document.querySelectorAll('#sw button').forEach(b=>b.classList.toggle('on',b.dataset.c===S.a));draw();}
+$('cA').addEventListener('input',e=>setColor('a',e.target.value));
+$('cB').addEventListener('input',e=>setColor('b',e.target.value));
+$('sw').innerHTML=PRESETS.map(c=>`<button data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join('');
+$('sw').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{setColor('a',b.dataset.c);setColor('b',b.dataset.c==='#111111'?'#ffffff':b.dataset.c);}));
 
-                ctx.fillStyle = fallbackBg;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+/* ---------- prompts ---------- */
+const PROMPTS=[
+  {k:'배경',e:'BACKGROUND',t:'backlighting, strong rim light, dark background, ethereal glow,'},
+  {k:'구도',e:'COMPOSITION',t:'face close-up shot, extreme close-up, focusing tightly on her face, which fills the frame,'}
+];
+function copyText(t,done){
+  const ok=()=>{done&&done();toast('PROMPT COPIED');};
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;opacity:0;top:0';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,ta.value.length);try{document.execCommand('copy');ok();}catch(e){toast('COPY FAILED');}ta.remove();};
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,fb);else fb();
+}
+$('pgrid').innerHTML=PROMPTS.map((p,i)=>`<button class="pb" data-i="${i}"><span class="top"><b>${p.k} <span class="lbl" style="margin-left:6px">${p.e}</span></b><span class="cp">COPY</span></span><code>${p.t}</code></button>`).join('');
+$('pgrid').querySelectorAll('.pb').forEach(b=>b.addEventListener('click',()=>copyText(PROMPTS[b.dataset.i].t,()=>{
+  b.classList.add('done');b.querySelector('.cp').textContent='COPIED';clearTimeout(b._t);b._t=setTimeout(()=>{b.classList.remove('done');b.querySelector('.cp').textContent='COPY';},1600);})));
+$('cpAll').addEventListener('click',()=>copyText(PROMPTS.map(p=>p.t).join('\n')));
 
-                if (uploadedImage.src && uploadedImage.src !== window.location.href) {
-                    const imgRatio = uploadedImage.width / uploadedImage.height;
-                    const canvasRatio = canvas.width / canvas.height;
-                    let renderW, renderH, renderX, renderY;
+/* ---------- export ---------- */
+function exportPNG(){const c=document.createElement('canvas');c.width=W*2;c.height=H*2;render(c.getContext('2d'),2,false);return c.toDataURL('image/png');}
+$('save').addEventListener('click',async()=>{
+  const btn=$('save');btn.classList.add('busy');btn.firstElementChild.textContent='렌더링 중...';
+  try{await document.fonts.ready;}catch(e){}
+  setTimeout(()=>{
+    const done=()=>{btn.classList.remove('busy');btn.firstElementChild.textContent='고화질 이미지 저장';};
+    try{
+      const base=($('nm').value.trim()||'ARCH').replace(/[\\/:*?"<>|]+/g,'_');
+      const a=document.createElement('a');a.download=`${base}_catchphrase${S.round?'':'_square'}.png`;a.href=exportPNG();document.body.appendChild(a);a.click();a.remove();
+      scan();toast('IMAGE SAVED');
+    }catch(e){console.error(e);toast('SAVE FAILED');}
+    done();
+  },60);
+});
 
-                    if (imgRatio > canvasRatio) {
-                        renderH = canvas.height;
-                        renderW = uploadedImage.width * (canvas.height / uploadedImage.height);
-                        renderX = (canvas.width - renderW) / 2; 
-                        renderY = 0; 
-                    } else {
-                        renderW = canvas.width;
-                        renderH = uploadedImage.height * (canvas.width / uploadedImage.width);
-                        renderX = 0; 
-                        renderY = 0; 
-                    }
-                    ctx.drawImage(uploadedImage, renderX, renderY, renderW, renderH);
-                }
-
-                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-                gradient.addColorStop(0, 'rgba(0,0,0,0)');
-                gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
-                gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.shadowColor = 'rgba(0,0,0,0.6)';
-                ctx.shadowBlur = 6;
-                ctx.shadowOffsetX = 1;
-                ctx.shadowOffsetY = 1;
-
-                let currentY = canvas.height - 40; 
-
-                if (phraseVal) {
-                    ctx.fillStyle = primaryTextCol;
-                    ctx.font = '300 17px Pretendard, sans-serif';
-                    ctx.textBaseline = 'bottom';
-                    ctx.globalAlpha = 0.95; 
-                    
-                    // --- 추가된 부분: 캔버스 텍스트 길이 측정 및 자동 줄바꿈 로직 ---
-                    const maxTextWidth = canvas.width - 100; // 좌우 50px씩 여백 (800 - 100 = 700)
-                    const paragraphs = phraseVal.split('\n'); // 사용자가 명시적으로 입력한 줄바꿈(\n) 먼저 분리
-                    let autoWrappedLines = [];
-
-                    paragraphs.forEach(paragraph => {
-                        let line = '';
-                        let words = paragraph.split(' '); // 띄어쓰기 기준으로 단어 분리
-                        
-                        for (let n = 0; n < words.length; n++) {
-                            let testLine = line + words[n] + ' ';
-                            let metrics = ctx.measureText(testLine);
-                            
-                            // 텍스트 너비가 최대 너비를 초과하면 줄바꿈 처리
-                            if (metrics.width > maxTextWidth && n > 0) {
-                                autoWrappedLines.push(line.trim());
-                                line = words[n] + ' ';
-                            } else {
-                                line = testLine;
-                            }
-                        }
-                        autoWrappedLines.push(line.trim());
-                    });
-
-                    // 아래에서 위로 그려지기 때문에 배열을 뒤집습니다.
-                    autoWrappedLines = autoWrappedLines.reverse(); 
-                    
-                    const lineHeight = 17 * 1.6; 
-                    autoWrappedLines.forEach(line => {
-                        ctx.fillText(line, 50, currentY);
-                        currentY -= lineHeight;
-                    });
-                    
-                    ctx.globalAlpha = 1.0;
-                    currentY -= 10; 
-                }
-
-                if (nameVal) {
-                    ctx.fillStyle = primaryTextCol;
-                    ctx.font = '900 88px Pretendard, sans-serif';
-                    ctx.textBaseline = 'bottom';
-                    ctx.letterSpacing = "-2px"; 
-                    ctx.fillText(nameVal, 50, currentY);
-                    ctx.letterSpacing = "0px";
-                    currentY -= 88; 
-                    currentY -= 6;  
-                }
-
-                if (threatVal) {
-                    ctx.fillStyle = threatCol;
-                    ctx.font = '900 17px Pretendard, sans-serif';
-                    ctx.textBaseline = 'bottom';
-                    ctx.letterSpacing = "2px";
-                    ctx.fillText(`[ ${levelTypeVal} LEVEL: ${threatVal} ]`, 50, currentY);
-                    ctx.letterSpacing = "0px";
-                }
-
-                if (badgeStr) {
-                    ctx.font = '800 14px Pretendard, sans-serif';
-                    ctx.letterSpacing = "1px";
-                    const textWidth = ctx.measureText(badgeStr).width;
-                    const paddingX = 20;
-                    const paddingY = 10;
-                    const badgeW = textWidth + (paddingX * 2);
-                    const badgeH = 14 + (paddingY * 2);
-                    const badgeX = canvas.width - 40 - badgeW; 
-                    const badgeY = 40; 
-
-                    ctx.shadowColor = 'rgba(0,0,0,0.15)';
-                    ctx.shadowBlur = 12;
-                    ctx.shadowOffsetY = 4;
-                    ctx.fillStyle = badgeBg;
-                    
-                    ctx.beginPath();
-                    ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 8);
-                    ctx.fill();
-
-                    ctx.shadowColor = 'rgba(0,0,0,0.6)'; 
-                    ctx.shadowBlur = 6;
-                    ctx.shadowOffsetX = 1;
-                    ctx.shadowOffsetY = 1;
-                    ctx.fillStyle = badgeTextCol;
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(badgeStr, badgeX + paddingX, badgeY + (badgeH / 2) + 1); 
-                    ctx.letterSpacing = "0px";
-                }
-
-                ctx.shadowColor = 'transparent';
-                ctx.fillStyle = badgeBg; 
-                ctx.fillRect(0, canvas.height - 7, canvas.width, 7);
-
-                const link = document.createElement('a');
-                link.download = nameValue + '_포스터.png';
-                link.href = canvas.toDataURL('image/png'); 
-                link.click();
-
-                btn.innerText = "고화질 이미지 저장";
-                btn.style.opacity = "1";
-                btn.style.pointerEvents = "auto";
-                
-            }, 100); 
-        });
-    </script>
+/* ---------- ui bits ---------- */
+let tT;function toast(m){$('tt').textContent=m;$('toast').classList.add('on');clearTimeout(tT);tT=setTimeout(()=>$('toast').classList.remove('on'),1800);}
+function scan(){const s=$('scan');s.style.setProperty('--h',(cv.clientHeight-2)+'px');s.classList.remove('go');void s.offsetWidth;s.classList.add('go');}
+const pad=n=>String(n).padStart(2,'0');
+function tick(){const d=new Date();$('clock').textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
+setInterval(tick,1000);tick();
+window.addEventListener('resize',draw);
+setColor('a',S.a);setColor('b',S.b);
+const boot=()=>{$('boot').classList.add('off');setTimeout(()=>$('boot').remove(),700);scan();};
+(document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1500))]):Promise.resolve()).then(()=>{draw();setTimeout(boot,500);});
+if(document.fonts)document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',draw);
+draw();
+</script>
 </body>
 </html>
